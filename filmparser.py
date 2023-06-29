@@ -58,7 +58,39 @@ def main():
     movies = loadMovies(driver)
     print("Movies: ", len(movies))
         
+    df = pd.DataFrame(columns=["title", "trama"])
+
+    driver = webdriver.Chrome()
+    for movie in movies:
+        driver.get(movie)
+        mainDiv = driver.find_element(By.CLASS_NAME, "col-lg-8")
+        
+        title = mainDiv.find_element(By.TAG_NAME, "header").find_element(By.TAG_NAME, "h1").text
+
+        trama = ""
+        try:
+            tramaSection = mainDiv.find_element(By.CLASS_NAME, "section-scheda--trama")
+            trama += tramaSection.find_element(By.TAG_NAME, "p").text + "\n"
+        except:
+            continue
+        
+        try:
+            tramaSection = tramaSection.find_element(By.TAG_NAME, "div")
+            driver.execute_script("arguments[0].click();", tramaSection.find_element(By.TAG_NAME, "a"))
+            ps = tramaSection.find_elements(By.TAG_NAME, "p")
+            
+            for p in ps:
+                trama += p.text + "\n"
+        except:
+            pass
+        
+        tempDF = pd.DataFrame([[title, trama]], columns=["title", "trama"])
+        df = pd.concat([df, tempDF], ignore_index=True)
+        
+        print(title)
     
+    print(df)
+    df.to_csv("movies.csv", index=False)
     
     
     
