@@ -25,7 +25,6 @@ def getPageMoviesTitle(url, options, rotator):
     for movie in movieList:
         title = movie.find_element(By.TAG_NAME, "div").find_element(By.TAG_NAME, "h2").find_element(By.TAG_NAME, "a").get_attribute("href")
         movies.append(title)
-        print(driver.execute_script("return navigator.userAgent"))
     driver.close()
     return movies
 
@@ -61,13 +60,15 @@ def loadLinks(url, options, rotator, path="movies.txt"):
     return movies
 
 
-def getData(driver, movies):
+def getData(movies, options, rotator):
     df = pd.DataFrame(columns=["title", "trama"])
     
     for movie in movies:
+        options.add_argument("user-agent={userAgent}".format(userAgent=rotator.get_random_user_agent()))
+        driver = webdriver.Chrome(options=options)
         driver.get(movie)
+
         mainDiv = driver.find_element(By.CLASS_NAME, "col-lg-8")
-        
         title = mainDiv.find_element(By.TAG_NAME, "header").find_element(By.TAG_NAME, "h1").text
 
         trama = ""

@@ -20,8 +20,8 @@ def main():
         movies = loadLinks(url, options, userAgentRotator, filePath)
         print(elem.capitalize() + ": ", len(movies))
     
-    # dfMovies = getData(driver, movies)
-
+        dfMovies = getData(movies, options, userAgentRotator)
+        dfMovies.to_csv(os.path.join(os.getcwd(), "{elem}.csv".format(elem=elem)), index=False)
 
 
 #! ~ 4280 FILM TOTALI PRENDIBILI DA MOVIPLAYER.IT
