@@ -9,6 +9,7 @@ selenium = "*"
 beautifulsoup4 = "*"
 pandas = "*"
 pyarrow = "*"
+random-user-agent = "*"
 
 [dev-packages]
 
