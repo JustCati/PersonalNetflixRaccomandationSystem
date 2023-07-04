@@ -1,9 +1,6 @@
 import os
 import pandas as pd
-from selenium import webdriver
 from selenium.webdriver.common.by import By
-
-
 
 
 def changePage(driver):
@@ -24,43 +21,32 @@ def getPageMoviesTitle(driver):
     return movies
 
 
-def getCatalogueTitles(driver):
+def getCatalogueTitles(driver, path="movies.txt"):
     movies = []
     while True:
         movies.extend(getPageMoviesTitle(driver))
         if not changePage(driver):
             break
-    with open("movies.txt", "w") as fp:
+    with open(path, "w") as fp:
         fp.write("\n".join(movies))
     return movies
 
 
-def loadMovies(driver):
+def loadLinks(driver, path="movies.txt"):
     movies = []
-    if not os.path.exists("movies.txt"):
-        print("File not found, creating...")
-        movies = getCatalogueTitles(driver)
+    if not os.path.exists(path):
+        print("File not found, creating...") 
+        movies = getCatalogueTitles(driver, path)
         driver.close()
     else:
         print("File found, reading...")
-        movies = open("movies.txt", "r").read().split("\n")
+        movies = open(path, "r").read().split("\n")
     return movies
 
 
-
-def main():
-    options = webdriver.ChromeOptions()
-    # options.add_argument("--headless")
-
-    driver = webdriver.Chrome(options=options)
-    driver.get("https://movieplayer.it/film/streaming/netflix/")
-
-    movies = loadMovies(driver)
-    print("Movies: ", len(movies))
-        
+def getData(driver, movies):
     df = pd.DataFrame(columns=["title", "trama"])
-
-    driver = webdriver.Chrome()
+    
     for movie in movies:
         driver.get(movie)
         mainDiv = driver.find_element(By.CLASS_NAME, "col-lg-8")
@@ -86,18 +72,4 @@ def main():
         
         tempDF = pd.DataFrame([[title, trama]], columns=["title", "trama"])
         df = pd.concat([df, tempDF], ignore_index=True)
-        
-        print(title)
-    
-    print(df)
-    df.to_csv("movies.csv", index=False)
-    
-    
-    
-    
-    
-    
-
-#! ~ 4280 FILM TOTALI PRENDIBILI DA MOVIPLAYER.IT
-if __name__ == "__main__":
-    main()
+    return df
