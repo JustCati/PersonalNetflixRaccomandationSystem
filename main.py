@@ -9,19 +9,22 @@ def main():
     operating_systems = [OperatingSystem.WINDOWS.value, OperatingSystem.LINUX.value, OperatingSystem.MAC.value]
     userAgentRotator = UserAgent(software_names=software_names, operating_systems=operating_systems, limit=100)
     
-    options = webdriver.ChromeOptions()
-    options.add_argument("--headless")
-    options.add_argument("--no-sandbox")
+    # options = webdriver.ChromeOptions()
+    # options.add_argument("--headless")
+    # options.add_argument("--no-sandbox")
+    # options.add_argument("start-maximized")
     
     for elem in ["film", "serietv"]:
         url = "https://movieplayer.it/" + elem + "/streaming/netflix/"
-        filePath = os.path.join(os.getcwd(), "src", "dataList", "{elem}.txt".format(elem=elem))
+        filePath = os.path.join(os.getcwd(), "data", "list", "{elem}.txt".format(elem=elem))
+        dfPath = os.path.join(os.path.join(os.getcwd(), "data", "{elem}.parquet".format(elem=elem)))
 
-        movies = loadLinks(url, options, userAgentRotator, filePath)
+        movies = loadLinks(url, userAgentRotator, filePath)
         print(elem.capitalize() + ": ", len(movies))
     
-        dfMovies = getData(movies, options, userAgentRotator)
-        dfMovies.to_csv(os.path.join(os.getcwd(), "{elem}.csv".format(elem=elem)), index=False)
+        dfMovies = getData(movies, userAgentRotator, dfPath)
+        dfMovies.to_csv(dfPath, index=False)
+        print(dfMovies.info())
 
 
 #! ~ 4280 FILM TOTALI PRENDIBILI DA MOVIPLAYER.IT
