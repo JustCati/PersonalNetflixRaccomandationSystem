@@ -1,43 +1,60 @@
 import os
 import pandas as pd
+from selenium import webdriver
 from selenium.webdriver.common.by import By
 
 
-def changePage(driver):
+
+def changePage(url, options, rotator):
+    options.add_argument("user-agent={userAgent}".format(userAgent=rotator.get_random_user_agent()))
+    
+    driver = webdriver.Chrome(options=options)
+    driver.get(url)
     nav = driver.find_element(By.CSS_SELECTOR, "[aria-label='Paginazione']").find_element(By.TAG_NAME, "ul")
     link = nav.find_elements(By.TAG_NAME, "li")[-1].find_element(By.TAG_NAME, "a").get_attribute("href")    
-    if(link == ""):
-        return False
-    driver.get(link)
-    return True
+    return link
 
 
-def getPageMoviesTitle(driver):
+def getPageMoviesTitle(url, options, rotator):
+    options.add_argument("user-agent={userAgent}".format(userAgent=rotator.get_random_user_agent()))
+    driver = webdriver.Chrome(options=options)
+    driver.get(url)
+    
     movies = []
     movieList = driver.find_element(By.CLASS_NAME, "list--film").find_elements(By.TAG_NAME, "li")
     for movie in movieList:
         title = movie.find_element(By.TAG_NAME, "div").find_element(By.TAG_NAME, "h2").find_element(By.TAG_NAME, "a").get_attribute("href")
         movies.append(title)
+        print(driver.execute_script("return navigator.userAgent"))
+    driver.close()
     return movies
 
 
-def getCatalogueTitles(driver, path="movies.txt"):
+def getCatalogueTitles(url, options, rotator, path="movies.txt"):
+    first = True
     movies = []
+    
     while True:
-        movies.extend(getPageMoviesTitle(driver))
-        if not changePage(driver):
+        if first:
+            first = False
+            movies.extend(getPageMoviesTitle(url, options, rotator))
+            continue
+        
+        url = changePage(url, options, rotator)
+        if url == "":
             break
+        movies.extend(getPageMoviesTitle(url, options, rotator))
+        
     with open(path, "w") as fp:
         fp.write("\n".join(movies))
     return movies
 
 
-def loadLinks(driver, path="movies.txt"):
+def loadLinks(url, options, rotator, path="movies.txt"):
     movies = []
     if not os.path.exists(path):
         print("File not found, creating...") 
-        movies = getCatalogueTitles(driver, path)
-        driver.close()
+        movies = getCatalogueTitles(url, options, rotator, path)
     else:
         print("File found, reading...")
         movies = open(path, "r").read().split("\n")
