@@ -132,44 +132,46 @@ def getData(movies, rotator, path="movies.parquet"):
                 "Distribuzione" : "string",
                 "Trama" : "string"
                 })
-        df.to_parquet(path, index=False, engine="fastparquet")
+        df.to_parquet(path, index=False)
 
     for movie in movies:
-        if df[df.Titolo == movie].shape[0] <= 0:
-            options = webdriver.ChromeOptions()
-            # options.add_argument("--headless")
-            options.add_argument("user-agent={userAgent}".format(userAgent=rotator.get_random_user_agent()))
+        options = webdriver.ChromeOptions()
+        # options.add_argument("--headless")
+        options.add_argument("user-agent={userAgent}".format(userAgent=rotator.get_random_user_agent()))
 
-            driver = webdriver.Chrome(options=options)
-            driver.get(movie)
-            
-            try:
-                mainDiv = driver.find_element(By.CLASS_NAME, "col-lg-8")
-            except NoSuchElementException as e:
-                movies.append(movie)
-                continue
+        driver = webdriver.Chrome(options=options)
+        driver.get(movie)
+        
+        try:
+            mainDiv = driver.find_element(By.CLASS_NAME, "col-lg-8")
+        except NoSuchElementException:
+            movies.append(movie)
+            continue
 
-            id = (movie.split("_")[-1])[1:-1]
+        id = (movie.split("_")[-1])[1:-1]
 
-            titleElems = mainDiv.find_element(By.TAG_NAME, "header").find_element(By.TAG_NAME, "h1").text.split(" ")
-            title = (" ".join(titleElems[:-1])).strip()
+        titleElems = mainDiv.find_element(By.TAG_NAME, "header").find_element(By.TAG_NAME, "h1").text.split(" ")
+        title = (" ".join(titleElems[:-1])).strip()
 
-            i = 0
-            trama = ""
-            while trama == "" and i <= 5:
-                trama = fetchTrama(driver, mainDiv)
-                i += 1
-            if trama == "":
-                continue
+        i = 0
+        trama = ""
+        while trama == "" and i <= 5:
+            trama = fetchTrama(driver, mainDiv)
+            i += 1
+        if trama == "":
+            continue
 
-            mainDiv = driver.find_element(By.XPATH, "//div[@class='scheda border p-3']").find_element(By.TAG_NAME, "dl")
-            driver.execute_script("arguments[0].scrollIntoView();", mainDiv)
+        mainDiv = driver.find_element(By.XPATH, "//div[@class='scheda border p-3']").find_element(By.TAG_NAME, "dl")
+        driver.execute_script("arguments[0].scrollIntoView();", mainDiv)
 
-            data = fetchInfo(mainDiv)
-            data["Titolo"] = title
-            data["Trama"] = trama
-            data["id"] = int(id)
+        data = fetchInfo(mainDiv)
+        data["id"] = id
+        data["Trama"] = trama
+        data["Titolo"] = title
 
+        print(data) #! DEBUG
+
+        if not (df.id == id).any():
             tempDF = pd.DataFrame([data], columns=col)
             tempDF = tempDF.astype({
                 "id" : "int64",
@@ -185,14 +187,13 @@ def getData(movies, rotator, path="movies.parquet"):
                 "Trama" : "string"})
 
             df = pd.concat([df, tempDF], ignore_index=True)
-            tempDF.to_parquet(path, index=False, engine="fastparquet", append=True)
-
-            driver.close()
         else:
-            pass
-            #TODO: CICLA TUTTE LE COLONNE E CONTROLLA SE VUOTE
-            #TODO: SE VUOTE, CERCA NELLA PAGINA E AGGIORNA ALMENO UNA VOLTA
-            # for col in df.columns:
-            #     if col == "title":
-            #         continue
+            tempDF = df[df.id == id]
+            for col in tempDF.columns:
+                if tempDF[col].values[0] == None and data[col] != None:
+                    tempDF[col] = data[col]
+            df[df.id == id] = tempDF
+
+        df.to_parquet(path, index=False)
+        driver.close()
     return df
