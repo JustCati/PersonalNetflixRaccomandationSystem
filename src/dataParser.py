@@ -13,6 +13,8 @@ def changePage(url, rotator):
     driver = webdriver.Chrome(options=options)
     driver.get(url)
     
+    driver.execute_script("arguments[0].scrollIntoView();", driver.find_element(By.CSS_SELECTOR, "[aria-label='Paginazione']"))
+    
     nav = driver.find_element(By.CSS_SELECTOR, "[aria-label='Paginazione']").find_element(By.TAG_NAME, "ul")
     link = nav.find_elements(By.TAG_NAME, "li")[-1].find_element(By.TAG_NAME, "a").get_attribute("href")    
     return link
@@ -25,6 +27,8 @@ def getPageMoviesTitle(url, rotator):
     
     driver = webdriver.Chrome(options=options)
     driver.get(url)
+    
+    driver.execute_script("arguments[0].scrollIntoView();", driver.find_element(By.CLASS_NAME, "list--film"))
     
     movies = []
     movieList = driver.find_element(By.CLASS_NAME, "list--film").find_elements(By.TAG_NAME, "li")
@@ -139,16 +143,16 @@ def getData(movies, rotator, path="movies.parquet"):
         # options.add_argument("--headless")
         options.add_argument("user-agent={userAgent}".format(userAgent=rotator.get_random_user_agent()))
 
-        driver = webdriver.Chrome(options=options)
-        driver.get(movie)
-        
         try:
+            driver = webdriver.Chrome(options=options)
+            driver.get(movie)
+            
             mainDiv = driver.find_element(By.CLASS_NAME, "col-lg-8")
-        except NoSuchElementException:
+        except Exception:
             movies.append(movie)
             continue
 
-        id = (movie.split("_")[-1])[1:-1]
+        id = int((movie.split("_")[-1]).strip()[:-1])
 
         titleElems = mainDiv.find_element(By.TAG_NAME, "header").find_element(By.TAG_NAME, "h1").text.split(" ")
         title = (" ".join(titleElems[:-1])).strip()
@@ -169,9 +173,7 @@ def getData(movies, rotator, path="movies.parquet"):
         data["Trama"] = trama
         data["Titolo"] = title
 
-        print(data) #! DEBUG
-
-        if not (df.id == id).any():
+        if not ((df.id == id).any()):
             tempDF = pd.DataFrame([data], columns=col)
             tempDF = tempDF.astype({
                 "id" : "int64",
@@ -187,12 +189,16 @@ def getData(movies, rotator, path="movies.parquet"):
                 "Trama" : "string"})
 
             df = pd.concat([df, tempDF], ignore_index=True)
+
+            print("AGGIUNTO '{title}' al dataset".format(title=title))
         else:
             tempDF = df[df.id == id]
-            for col in tempDF.columns:
-                if tempDF[col].values[0] == None and data[col] != None:
-                    tempDF[col] = data[col]
+            for column in tempDF.columns:
+                if tempDF[column].values[0] == None and data[column] != None:
+                    tempDF[column] = data[column]
             df[df.id == id] = tempDF
+
+            print("MODIFICATO '{title}' nel dataset".format(title=title))
 
         df.to_parquet(path, index=False)
         driver.close()
