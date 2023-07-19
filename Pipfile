@@ -11,6 +11,9 @@ pandas = "*"
 pyarrow = "*"
 random-user-agent = "*"
 fastparquet = "*"
+openai = "*"
+scikit-learn = "*"
+scikit-surprise = "*"
 
 [dev-packages]
 
