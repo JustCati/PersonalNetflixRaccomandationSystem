@@ -6,11 +6,11 @@ from selenium.common.exceptions import NoSuchElementException
 
 
 def changePage(url, rotator):
-    options = webdriver.ChromeOptions()
+    options = webdriver.FirefoxOptions()
     options.add_argument("--headless")
     options.add_argument("user-agent={userAgent}".format(userAgent=rotator.get_random_user_agent()))
     
-    driver = webdriver.Chrome(options=options)
+    driver = webdriver.Firefox(options=options)
     driver.get(url)
     
     driver.execute_script("arguments[0].scrollIntoView();", driver.find_element(By.CSS_SELECTOR, "[aria-label='Paginazione']"))
@@ -21,11 +21,11 @@ def changePage(url, rotator):
 
 
 def getPageMoviesTitle(url, rotator):
-    options = webdriver.ChromeOptions()
+    options = webdriver.FirefoxOptions()
     options.add_argument("--headless")
     options.add_argument("user-agent={userAgent}".format(userAgent=rotator.get_random_user_agent()))
     
-    driver = webdriver.Chrome(options=options)
+    driver = webdriver.Firefox(options=options)
     driver.get(url)
     
     driver.execute_script("arguments[0].scrollIntoView();", driver.find_element(By.CLASS_NAME, "list--film"))
@@ -86,17 +86,6 @@ def fetchTrama(driver, mainDiv):
     return trama.strip()
 
 
-# def getElements(elem):
-#     data = ""
-#     try:
-#         elements = elem.find_elements(By.TAG_NAME, "a")
-#         for element in elements:
-#             data += element.text + " "
-#     except NoSuchElementException:
-#         data = elem.text
-#         print(data)
-#     return data.strip()
-
 def fetchInfo(mainDiv):
     keys = mainDiv.find_elements(By.TAG_NAME, "dt")
     elements = mainDiv.find_elements(By.TAG_NAME, "dd")
@@ -139,12 +128,12 @@ def getData(movies, rotator, path="movies.parquet"):
         df.to_parquet(path, index=False)
 
     for movie in movies:
-        options = webdriver.ChromeOptions()
-        # options.add_argument("--headless")
+        options = webdriver.FirefoxOptions()
+        options.add_argument("--headless")
         options.add_argument("user-agent={userAgent}".format(userAgent=rotator.get_random_user_agent()))
 
         try:
-            driver = webdriver.Chrome(options=options)
+            driver = webdriver.Firefox(options=options)
             driver.get(movie)
             
             mainDiv = driver.find_element(By.CLASS_NAME, "col-lg-8")
@@ -198,7 +187,7 @@ def getData(movies, rotator, path="movies.parquet"):
                     tempDF[column] = data[column]
             df[df.id == id] = tempDF
 
-            print("MODIFICATO '{title}' nel dataset".format(title=title))
+            print("'{title}' già presente nel dataset".format(title=title))
 
         df.to_parquet(path, index=False)
         driver.close()

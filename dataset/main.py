@@ -1,4 +1,4 @@
-from src.dataParser import *
+from dataset.dataParser import *
 
 from datetime import datetime
 from random_user_agent.user_agent import UserAgent
@@ -24,25 +24,23 @@ def main():
     
     for elem in ["serietv", "film"]:
         url = "https://movieplayer.it/" + elem + "/streaming/netflix/"
-        path = os.path.join(os.path.join(os.getcwd(), "data", "{elem}".format(elem=elem)))
-        
-        titleList = path + ".txt"
-        dfPath = path + ".parquet"
+        pathCache = os.path.join(os.path.join(os.getcwd(), "cache", "{elem}.txt".format(elem=elem)))
+        pathDF = os.path.join(os.path.join(os.getcwd(), "dataset"), "{elem}.parquet".format(elem=elem))
 
         movies = []
-        if os.path.exists(titleList):
-            with open(titleList, "r") as f:
+        if os.path.exists(pathCache):
+            with open(pathCache, "r") as f:
                 movies = f.readlines()
             date = movies[0].strip()
             if (datetime.today() - datetime.strptime(date, '%Y-%m-%d')).days < 7:
                 movies = movies[1:]
             else:
-                movies = createTitleList(titleList, url, userAgentRotator)
+                movies = createTitleList(pathCache, url, userAgentRotator)
         else:
-            movies = createTitleList(titleList, url, userAgentRotator)
+            movies = createTitleList(pathCache, url, userAgentRotator)
         print("Trovati {n} {type}".format(n=len(movies), type=elem))
 
-        dfMovies = getData(movies, userAgentRotator, dfPath)
+        dfMovies = getData(movies, userAgentRotator, pathDF)
         print(dfMovies.info())
 
 
