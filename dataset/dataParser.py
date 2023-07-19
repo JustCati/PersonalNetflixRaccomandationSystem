@@ -4,6 +4,62 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.common.exceptions import NoSuchElementException
 
+from datetime import datetime
+from random_user_agent.user_agent import UserAgent
+from random_user_agent.params import SoftwareName, OperatingSystem
+
+
+
+def createTitleList(path, url, userAgentRotator):
+    movies = []
+    movies.append(datetime.today().strftime('%Y-%m-%d'))
+    movies.extend(getCatalogueTitles(url, userAgentRotator))
+
+    with open(path, "w") as f:
+        f.write("\n".join(movies))
+    
+    return movies[1:]
+
+
+def getDataset():
+    software_names = [SoftwareName.CHROME.value]
+    operating_systems = [OperatingSystem.WINDOWS.value, OperatingSystem.LINUX.value, OperatingSystem.MAC.value]
+    userAgentRotator = UserAgent(software_names=software_names, operating_systems=operating_systems)
+    
+    df = None
+    for elem in ["serietv", "film"]:
+        url = "https://movieplayer.it/" + elem + "/streaming/netflix/"
+        pathCache = os.path.join(os.getcwd(), "dataset", "cache", "{elem}.txt".format(elem=elem))
+        pathDF = os.path.join(os.getcwd(), "dataset", "dataset", "{elem}.parquet".format(elem=elem))
+
+        movies = []
+        date = ""
+        if os.path.exists(pathCache):
+            with open(pathCache, "r") as f:
+                movies = f.readlines()
+            date = movies[0].strip()
+            if (datetime.today() - datetime.strptime(date, '%Y-%m-%d')).days < 7:
+                print("Utilizzo la cache per {type}".format(type=elem))
+                movies = movies[1:]
+            else:
+                print("Creo nuova cache per {type}".format(type=elem))
+                movies = createTitleList(pathCache, url, userAgentRotator)
+        else:
+            movies = createTitleList(pathCache, url, userAgentRotator)
+        print("Trovati {n} {type}".format(n=len(movies), type=elem))
+
+        if os.path.exists(pathDF) and ((datetime.today() - datetime.strptime(date, '%Y-%m-%d')).days < 7):
+            print("Utilizzo il dataset per {type}".format(type=elem))
+            dfMovies = pd.read_parquet(pathDF)
+        else:
+            print("Creo nuovo dataset per {type}".format(type=elem))
+            dfMovies = getData(movies, userAgentRotator, pathDF)
+        print("Dataset {type} pronto".format(type=elem))
+        
+        df = pd.concat([df, dfMovies], ignore_index=True)
+    return df
+
+
 
 def changePage(url, rotator):
     options = webdriver.FirefoxOptions()
