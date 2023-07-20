@@ -56,6 +56,7 @@ def getDataset():
             dfMovies = getData(movies, userAgentRotator, pathDF)
         print("Dataset {type} pronto".format(type=elem))
         
+        dfMovies["Tipologia"] = elem
         df = pd.concat([df, dfMovies], ignore_index=True)
     return df
 
