@@ -15,6 +15,7 @@ def getEmbeddings(df, API_KEY):
                 )
                 embedding = response["data"][0]["embedding"]
                 df.at[index, "Embedding"] = embedding
+                df.to_parquet("dataset.parquet")
                 print(f"Embedding {index} done!")
                 time.sleep(30)
             except Exception as e:
