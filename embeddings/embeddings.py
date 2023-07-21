@@ -1,3 +1,4 @@
+import sys
 import time
 import torch
 import openai
@@ -7,20 +8,10 @@ from sentence_transformers import SentenceTransformer
 
 
 def getEmbeddings_E5_LargeV2(df, shuffle=True):
-    if torch.cuda.is_available():
-        torch.device("cuda")
-        print("Pytorch using CUDA")
-    elif torch.backends.mps.is_available():
-        torch.device("mps")
-        print("Pytorch using MPS")
-    else:
-        torch.device("cpu")
-        print("Pytorch using CPU")
-    
     if shuffle:
         df = df.sample(frac=1).reset_index(drop=True)
 
-    model = SentenceTransformer('embaas/sentence-transformers-e5-large-v2')
+    model = SentenceTransformer('embaas/sentence-transformers-e5-large-v2', device=("mps" if torch.backends.mps.is_available() else "cuda" if torch.cuda.is_available() else "cpu"))
     for index, row in df.iterrows():
         if (row.Embedding == np.inf).all(): 
             embedding = model.encode(row.Trama)
@@ -30,7 +21,14 @@ def getEmbeddings_E5_LargeV2(df, shuffle=True):
 
 
 
-def getEmbeddingsOpenAI(df, API_KEY, shuffle=True):
+def getEmbeddingsOpenAI(df, shuffle=True):
+    API_KEY = None
+    if len(sys.argv) > 1:
+        API_KEY = sys.argv[1]
+        if ".env" in API_KEY:
+            with open(API_KEY) as f:
+                API_KEY = f.read().strip()
+        API_KEY = API_KEY.split("=")[1]
     openai.api_key = API_KEY
 
     if shuffle:
