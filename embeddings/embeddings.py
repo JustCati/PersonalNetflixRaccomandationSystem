@@ -4,11 +4,11 @@ import torch
 import openai
 import numpy as np
 
-from sklearn.preprocessing import OneHotEncoder
-
 from sentence_transformers import SentenceTransformer
-        
+from sklearn.preprocessing import MultiLabelBinarizer, OneHotEncoder
 
+
+#iterrows instead of appply for step by step saving of the dataset
 def getEmbeddingsTrama_E5_LargeV2(df, shuffle=True):
     if shuffle:
         df = df.sample(frac=1).reset_index(drop=True)
@@ -54,3 +54,31 @@ def getEmbeddingsTrama_OpenAI(df, shuffle=True):
                 print("Saving Dataset...")
                 df.to_parquet("dataset.parquet")
                 exit()
+    return df
+           
+
+def getFeatureAttori(df, colName="Attori"):
+    df[colName] = df[colName].fillna("").apply(lambda x: x.split(", "))
+
+    encoder = MultiLabelBinarizer()
+    encoder.fit(df[colName])
+    df["Embeddings_" + colName] = encoder.transform(df[colName]).tolist()
+    return df
+
+
+def getFeatureTipologia(df):
+    encoder = OneHotEncoder(handle_unknown='ignore')
+    
+    encoder.fit(df.Tipologia.values.reshape(-1, 1))
+    df["Embeddings_Tipologia"] = encoder.transform(df.Tipologia.values.reshape(-1, 1)).toarray().tolist()
+    return df
+
+
+def getFeatureGenere(df):
+    df.Genere = df.Genere.fillna("").apply(lambda x: x.replace(",", " ").split(" "))
+    df.Genere = df.Genere.apply(lambda x: [i.strip() for i in x if i != ""])
+    
+    encoder = MultiLabelBinarizer()
+    encoder.fit(df.Genere)
+    df["Embeddings_Genere"] = encoder.transform(df.Genere).tolist()
+    return df 

@@ -14,15 +14,21 @@ def main():
         df = original_df.copy(deep=True)
         df["Embeddings_Trama"] = [np.full((1024,), np.inf, dtype=np.float32) for _ in range(len(df))]
     else:
-        original_df = getDataset(update=False) #! DEBUG, change with update=True
+        original_df = getDataset(update=False)              #! DEBUG, change with update=True
         original_df.to_parquet("netflix.parquet")
         df["Embeddings_Trama"] = [np.full((1024,), np.inf, dtype=np.float32) for _ in range(len(df))]
 
 
     #*---------- Get Embedding for Trama ------------
-    df = getEmbeddingsTrama_E5_LargeV2(df, shuffle=True)
+    # df = getEmbeddingsTrama_E5_LargeV2(df, shuffle=True)  #! DEBUG, uncommment
     #*-----------------------------------------------
 
+    #*---------- Get Vector for Genere, Regia, Attori, Tipologia -----------
+    df = getFeatureAttori(df, colName="Attori")
+    df = getFeatureTipologia(df)
+    df = getFeatureGenere(df)
+    df = getFeatureAttori(df, colName="Regia")
+    #*-----------------------------------------------------------------------
 
 
 if __name__ == "__main__":
