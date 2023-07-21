@@ -29,8 +29,8 @@ def getDataset(update=True):
     df = None
     for elem in ["serietv", "film"]:
         url = "https://movieplayer.it/" + elem + "/streaming/netflix/"
-        pathCache = os.path.join(os.getcwd(), "dataset", "cache", "{elem}.txt".format(elem=elem))
-        pathDF = os.path.join(os.getcwd(), "dataset", "dataset", "{elem}.parquet".format(elem=elem))
+        pathCache = os.path.join(os.getcwd(), "dataset", ".cache", "{elem}.txt".format(elem=elem))
+        pathDF = os.path.join(os.getcwd(), "dataset", ".datasetCache", "{elem}.parquet".format(elem=elem))
 
         movies = []
         date = ""
