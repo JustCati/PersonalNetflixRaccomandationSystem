@@ -23,6 +23,7 @@ def main():
             API_KEY = f.read().strip()
     API_KEY = API_KEY.split("=")[1]
 
+    df = df.sample(frac=1).reset_index(drop=True)
     getEmbeddings(df, API_KEY)
 
 
