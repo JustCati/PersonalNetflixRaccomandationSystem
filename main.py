@@ -1,32 +1,35 @@
 import os
 import sys
+import torch
 import numpy as np
 import pandas as pd
 
 from dataset.dataParser import getDataset
-from embeddings.embeddings import getEmbeddings
+from embeddings.embeddings import getEmbeddingsOpenAI, getEmbeddings_E5_LargeV2
 
 
 def main():
+    torch.device("mps")
+    
     if os.path.exists("dataset.parquet"):
         df = pd.read_parquet("dataset.parquet")
     else:
         df = getDataset()
-        df["Embedding"] = [np.full((1536,), np.inf) for _ in range(len(df))] #! <3
+        df["Embedding"] = [np.full((1024,), np.inf) for _ in range(len(df))] #! <3
         df.to_parquet("dataset.parquet")
-    
-    #*-------------------------------------
 
-    API_KEY = sys.argv[1]
-    if ".env" in API_KEY:
-        with open(API_KEY) as f:
-            API_KEY = f.read().strip()
-    API_KEY = API_KEY.split("=")[1]
+    #*-------------------------------------
+    #! running on fisso
+    # API_KEY = sys.argv[1]
+    # if ".env" in API_KEY:
+    #     with open(API_KEY) as f:
+    #         API_KEY = f.read().strip()
+    # API_KEY = API_KEY.split("=")[1]
 
     df = df.sample(frac=1).reset_index(drop=True)
-    getEmbeddings(df, API_KEY)
-
-
+    getEmbeddings_E5_LargeV2(df)
+    # getEmbeddingsOpenAI(df, API_KEY)
+    #*-------------------------------------
 
 
 
