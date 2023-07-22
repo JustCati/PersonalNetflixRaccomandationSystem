@@ -18,10 +18,11 @@ def main():
         original_df.to_parquet("netflix.parquet")
         df["Embeddings_Trama"] = [np.full((1024,), np.inf, dtype=np.float32) for _ in range(len(df))]
 
-
     #*---------- Get Embedding for Trama ------------
-    # df = getEmbeddingsTrama_E5_LargeV2(df, shuffle=True)  #! DEBUG, uncommment
+    if (df.Embeddings_Trama.values[0] == [np.full((1024,), np.inf, dtype=np.float32) for _ in range(len(df))]).all():
+        df = getEmbeddingsTrama_E5_LargeV2(df, shuffle=True) 
     #*-----------------------------------------------
+
 
     #*---------- Get Vector for Genere, Regia, Attori, Tipologia -----------
     df = getFeatureAttori(df, colName="Attori")
