@@ -8,18 +8,13 @@ from sentence_transformers import SentenceTransformer
 from sklearn.preprocessing import MultiLabelBinarizer, OneHotEncoder
 
 
-#iterrows instead of appply for step by step saving of the dataset
 def getEmbeddingsTrama_E5_LargeV2(df, shuffle=True):
     if shuffle:
         df = df.sample(frac=1).reset_index(drop=True)
 
     model = SentenceTransformer('embaas/sentence-transformers-e5-large-v2', device=("mps" if torch.backends.mps.is_available() else "cuda" if torch.cuda.is_available() else "cpu"))
-    for index, row in df.iterrows():
-        if (row.Embeddings_Trama == np.inf).all(): 
-            embedding = model.encode(row.Trama)
-            df.at[index, "Embeddings_Trama"] = embedding
-            df.to_parquet("netflix.parquet")
-            print(f"Embedding {index} done!")
+    df.Embeddings_Trama = df.apply((lambda x: model.encode(x.Trama) if (x.Embeddings_Trama == np.inf).all() else x), axis=1)
+    df.to_parquet("netflix.parquet")
     return df
 
 
