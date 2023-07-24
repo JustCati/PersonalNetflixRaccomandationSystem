@@ -53,11 +53,12 @@ def getEmbeddingsTrama_OpenAI(df, shuffle=True):
            
 
 def getFeatureAttori(df, colName="Attori"):
-    df[colName] = df[colName].fillna("").apply(lambda x: x.split(", "))
+    df[colName + "Temp"] = df[colName].fillna("").apply(lambda x: x.split(", "))
 
     encoder = MultiLabelBinarizer()
-    encoder.fit(df[colName])
-    df["Embeddings_" + colName] = encoder.transform(df[colName]).tolist()
+    encoder.fit(df[colName + "Temp"])
+    df["Embeddings_" + colName] = encoder.transform(df[colName + "Temp"]).tolist()
+    df = df.drop(columns=[colName + "Temp"])
     return df
 
 
@@ -70,10 +71,11 @@ def getFeatureTipologia(df):
 
 
 def getFeatureGenere(df):
-    df.Genere = df.Genere.fillna("").apply(lambda x: x.replace(",", " ").split(" "))
-    df.Genere = df.Genere.apply(lambda x: [i.strip() for i in x if i != ""])
+    df["GenereTemp"] = df.Genere.fillna("").apply(lambda x: x.replace(",", " ").split(" "))
+    df.GenereTemp = df.GenereTemp.apply(lambda x: [i.strip() for i in x if i != ""])
     
     encoder = MultiLabelBinarizer()
-    encoder.fit(df.Genere)
-    df["Embeddings_Genere"] = encoder.transform(df.Genere).tolist()
+    encoder.fit(df.GenereTemp)
+    df["Embeddings_Genere"] = encoder.transform(df.GenereTemp).tolist()
+    df = df.drop(columns=["GenereTemp"])
     return df 
