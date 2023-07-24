@@ -15,6 +15,7 @@ openai = "*"
 scikit-learn = "*"
 scikit-surprise = "*"
 sentence-transformers = "*"
+parallel-pandas = "*"
 
 [dev-packages]
 
