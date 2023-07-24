@@ -6,6 +6,7 @@ from distances import *
 from embeddings import *
 from dataset.dataParser import getDataset
 
+from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
 
 
@@ -23,21 +24,33 @@ def main():
 
 
 
-    #*---------- Get Embedding for Trama ------------
+        #*---------- Get Embedding for Trama ------------
+    toUpdate = False
     if (df.Embeddings_Trama.values[0] == [np.full((1024,), np.inf, dtype=np.float32) for _ in range(len(df))]).all():
         df = getEmbeddingsTrama_E5_LargeV2(df, shuffle=True)
+        toUpdate = True
     #*-----------------------------------------------
 
     #*---------- Get Vector for Genere, Regia, Attori, Tipologia -----------
-    df = getFeatureAttori(df, colName="Attori")
-    df = getFeatureTipologia(df)
-    df = getFeatureGenere(df)
-    df = getFeatureAttori(df, colName="Regia")
-    #*-----------------------------------------------------------------------
+    if toUpdate or "allEmbeddings" not in df.columns:
+        df = getFeatureGenere(df)
+        df = getFeatureAttori(df, colName="Regia")
+        df = getFeatureAttori(df, colName="Attori")
+        df = getFeatureTipologia(df)
 
-    #*---------- Get Rapresentation Vector ------------
-    df["allEmbeddings"] = df.apply(lambda x: np.concatenate((x["Embeddings_Trama"], x["Embeddings_Genere"], x["Embeddings_Regia"], x["Embeddings_Attori"], x["Embeddings_Tipologia"]), dtype=np.float32), axis=1)
-    df.allEmbeddings = df.apply(lambda x: StandardScaler().fit_transform(x["allEmbeddings"].reshape(-1, 1)).reshape(-1), axis=1)
+        df["allEmbeddings"] = df.apply(lambda x: np.concatenate((x["Embeddings_Trama"], x["Embeddings_Genere"], x["Embeddings_Regia"], x["Embeddings_Attori"], x["Embeddings_Tipologia"]), dtype=np.float32), axis=1)
+        df = df.drop(columns=["Embeddings_Trama", "Embeddings_Genere", "Embeddings_Regia", "Embeddings_Attori", "Embeddings_Tipologia"])
+        df.allEmbeddings = df.apply(lambda x: StandardScaler().fit_transform(x["allEmbeddings"].reshape(-1, 1)).reshape(-1), axis=1)
+
+        pca = PCA(n_components=1024)
+        data = df.allEmbeddings.values
+        data = np.array([np.array(elem) for elem in data])
+
+        pca.fit(data)
+        data = pca.transform(data)
+        df.allEmbeddings = data.tolist()
+    if "Embeddings_Trama" in df.columns:
+        df = df.drop(columns=["Embeddings_Trama"]) 
     #*--------------------------------------------
     
         
@@ -56,29 +69,14 @@ def main():
             print(df.iloc[np.argsort(similarity_matrix[index])[10::-1]]["Titolo"][-2::-1])
 
     #! Dot Product (unused because embeddings is scaled so dot product is the same as cosine similarity)
-    # movie = df.allEmbeddings.values[index]
-    # embeddings = np.array([np.array(elem) for elem in df.allEmbeddings.values])
+    movie = df.allEmbeddings.values[index]
+    embeddings = np.array([np.array(elem) for elem in df.allEmbeddings.values])
     
-    # similar = embeddings.dot(movie)
-    # sorted_idx = np.argsort(-similar)
+    similar = embeddings.dot(movie)
+    sorted_idx = np.argsort(-similar)
     
-    # print(f"Film simili con dot product:")
-    # print(df.iloc[sorted_idx[10::-1]]["Titolo"][-2::-1])
-
-    #! Linear SVC
-    # movie = df.allEmbeddings.values[index]
-    # x = np.concatenate([movie[None, ...], [np.array(elem) for elem in df.allEmbeddings.values]])
-    # y = np.zeros(len(df) + 1)
-    # y[0] = 1
-    
-    # clf = LinearSVC(class_weight='balanced', verbose=False, max_iter=100000, tol=1e-6, C=0.1)
-    # clf.fit(x, y)
-    
-    # similarities = clf.decision_function(x)
-    # sorted_idx = np.argsort(-similarities)
-    
-    # print(f"Film simili con SVM:")
-    # print(df.iloc[sorted_idx[-11::]]["Titolo"][-2::-1])
+    print(f"Film simili con dot product:")
+    print(df.iloc[sorted_idx[10::-1]]["Titolo"][-2::-1])
     #*-------------------------------
     
 
