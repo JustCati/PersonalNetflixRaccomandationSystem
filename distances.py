@@ -1,6 +1,5 @@
 import numpy as np
 
-from sklearn.svm import SVC, LinearSVC
 from sklearn.metrics.pairwise import cosine_similarity, euclidean_distances
 
 
