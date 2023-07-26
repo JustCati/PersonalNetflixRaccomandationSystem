@@ -22,7 +22,7 @@ def main():
     if os.path.exists("embeddings.parquet"):
         embeddings = pd.read_parquet("embeddings.parquet")
     else:
-        embeddings = pd.DataFrame(movies.id, columns=["id"])
+        embeddings = pd.DataFrame({"id" : movies.id, "Tipologia" : movies.Tipologia}, columns=["id", "Tipologia"])
         embeddings["Embeddings_Trama"] = [np.full((1024,), np.inf, dtype=np.float32) for _ in range(len(movies))]
 
 
