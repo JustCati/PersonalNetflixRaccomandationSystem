@@ -2,9 +2,11 @@ import os
 import numpy as np
 import pandas as pd
 
-from distances import *
-from embeddings import *
-from dataset.dataParser import getDataset
+from raccomend.raccomend import *
+from raccomend.embeddings import *
+
+from dataset.dataScraper import getDataset
+from dataset.raccomenderDataset import getUtilityMatrix
 
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
@@ -17,7 +19,7 @@ def main():
     else:
         movies = getDataset(update=False)              #! DEBUG, change with update=True
         movies.to_parquet("netflix.parquet")
-    
+
     #* Load Embeddings Dataset
     if os.path.exists("embeddings.parquet"):
         embeddings = pd.read_parquet("embeddings.parquet")
@@ -26,15 +28,13 @@ def main():
         embeddings["Embeddings_Trama"] = [np.full((1024,), np.inf, dtype=np.float32) for _ in range(len(movies))]
 
 
-
-    #*---------- Get Embedding for Trama ------------
+    #* ---------- Get Embeddings ------------
     toUpdate = False
     if (embeddings.Embeddings_Trama.values[0] == [np.full((1024,), np.inf, dtype=np.float32) for _ in range(len(movies))]).all():
         embeddings = getEmbeddingsTrama_E5_LargeV2(embeddings, movies, shuffle=True)
         toUpdate = True
-    #*-----------------------------------------------
 
-    #*---------- Get Vector for Genere, Regia, Attori, Tipologia -----------
+
     if toUpdate or "allEmbeddings" not in embeddings.columns:
         embeddings = getFeatureGenere(embeddings, movies)
         embeddings = getFeatureAttori(embeddings, movies, colName="Regia")
@@ -55,36 +55,28 @@ def main():
         embeddings.to_parquet("embeddings.parquet")
         
         embeddings = embeddings.drop(columns=["Embeddings_Trama"])
-    #*--------------------------------------------
-    
-        
-    #*---------- Naive --------
-    while((title := input("Inserisci il titolo del film: ").strip()) not in movies.Titolo.values):
-        print("Film non trovato")
-    id = movies[movies.Titolo == title].id.values[0]
-    index = movies[movies.Titolo == title].index[0]
-    
-    
-    for distance in ("cosine", "euclidean"):
-        similarity_matrix = getSimilarityMatrix(embeddings, colName="allEmbeddings", method=distance)
-        
-        print(f"Film simili con {distance} come distanza:")
-        if distance == "cosine":
-            print(movies.iloc[np.argsort(similarity_matrix[index])[-11::]]["Titolo"][-2::-1])
-        elif distance == "euclidean":
-            print(movies.iloc[np.argsort(similarity_matrix[index])[10::-1]]["Titolo"][-2::-1])
+    #* --------------------------------------------
 
-    #! Dot Product (unused because embeddings is scaled so dot product is the same as cosine similarity)
-    movie = embeddings.allEmbeddings.values[index]
-    toCalculate = np.array([np.array(elem) for elem in embeddings.allEmbeddings.values])
+
+    #* ---------- Naive --------
+    # while((title := input("Inserisci il titolo del film: ").strip()) not in movies.Titolo.values):
+    #     print("Film non trovato")
+
+    # print("Film simili con cosine come distanza:")
+    # print(getMostSimilarCosine(movies, embeddings, title))
+
+    # print("\nFilm simili con euclidean come distanza:")
+    # print(getMostSimilarEuclidean(movies, embeddings, title))
+    #* -------------------------------
     
-    similar = toCalculate.dot(movie)
-    sorted_idx = np.argsort(-similar)
-    
-    print(f"Film simili con dot product:")
-    print(movies.iloc[sorted_idx[10::-1]]["Titolo"][-2::-1])
-    #*-------------------------------
-    
+    #* ---------- KNN-Regressor ------------- 
+    if not os.path.exists("utilitymatrix.parquet"):
+        utilityMatrix = getUtilityMatrix()
+        utilityMatrix.to_parquet("utilitymatrix.parquet")
+    else:
+        utilityMatrix = pd.read_parquet("utilitymatrix.parquet")
+    #* ---------------------------------------
+
 
 
 if __name__ == "__main__":
