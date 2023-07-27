@@ -1,4 +1,5 @@
 import os
+import argparse
 import numpy as np
 import pandas as pd
 
@@ -13,6 +14,11 @@ from sklearn.preprocessing import StandardScaler
 
 
 def main():
+    parser = argparse.ArgumentParser(description="Raccomender")
+    parser.add_argument("--qualitative", type=int, default=None, help="Qualitative search")
+    args = parser.parse_args()
+
+
     #* Load Movies metadata Dataset
     if os.path.exists("netflix.parquet"):
         movies = pd.read_parquet("netflix.parquet")
@@ -59,14 +65,15 @@ def main():
 
 
     #* ---------- Naive --------
-    while((title := input("Inserisci il titolo del film: ").strip()) not in movies.Titolo.values):
-        print("Film non trovato")
+    if args.qualitative is not None:
+        while((title := input("Inserisci il titolo del film: ").strip()) not in movies.Titolo.values):
+            print("Film non trovato")
 
-    print("Film simili con cosine come distanza:")
-    print(getMostSimilarCosine(movies, embeddings, title))
+        print("Film simili con cosine come distanza:")
+        print(getMostSimilarCosine(movies, embeddings, title))
 
-    print("\nFilm simili con euclidean come distanza:")
-    print(getMostSimilarEuclidean(movies, embeddings, title))
+        print("\nFilm simili con euclidean come distanza:")
+        print(getMostSimilarEuclidean(movies, embeddings, title))
     #* -------------------------------
 
 

@@ -15,6 +15,7 @@ scikit-learn = "*"
 scikit-surprise = "*"
 sentence-transformers = "*"
 parallel-pandas = "*"
+argparse = "*"
 
 [dev-packages]
 
