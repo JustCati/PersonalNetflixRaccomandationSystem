@@ -1,9 +1,10 @@
 import os
+import random
 import argparse
 import numpy as np
 import pandas as pd
 
-from raccomend.raccomend import *
+from raccomend.distances import *
 from raccomend.embeddings import *
 
 from dataset.dataScraper import getDataset
@@ -13,12 +14,16 @@ from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
 
 
+
+
 def main():
     parser = argparse.ArgumentParser(description="Raccomender")
     parser.add_argument("--qualitative", type=int, default=None, help="Qualitative search")
+    parser.add_argument("--quantitative", type=int, default=None, help="Quantitative search")
     args = parser.parse_args()
 
 
+    #* ---------- Load Dataset ------------
     #* Load Movies metadata Dataset
     if os.path.exists("netflix.parquet"):
         movies = pd.read_parquet("netflix.parquet")
@@ -30,8 +35,9 @@ def main():
     if os.path.exists("embeddings.parquet"):
         embeddings = pd.read_parquet("embeddings.parquet")
     else:
-        embeddings = pd.DataFrame({"id" : movies.id, "Tipologia" : movies.Tipologia}, columns=["id", "Tipologia"])
+        embeddings = pd.DataFrame({"id" : movies.id, "Tipologia" : movies.Tipologia, "Titolo" : movies.Titolo}, columns=["id", "Tipologia", "Titolo"])
         embeddings["Embeddings_Trama"] = [np.full((1024,), np.inf, dtype=np.float32) for _ in range(len(movies))]
+    #* ------------------------------------
 
 
     #* ---------- Get Embeddings ------------
@@ -77,13 +83,31 @@ def main():
     #* -------------------------------
 
 
-    #* ---------- KNN-Regressor -------------
+    #* ---------- Utility Matrix -------------
     if not os.path.exists("utilitymatrix.parquet"):
         utilityMatrix = getUtilityMatrix(movies)
         utilityMatrix.to_parquet("utilitymatrix.parquet")
     else:
         utilityMatrix = pd.read_parquet("utilitymatrix.parquet")
     #* ---------------------------------------
+
+
+    #* ---------- Dataset Creation ------------
+    columns = utilityMatrix.columns.tolist()
+    random.Random(42).shuffle(columns)          #! DEBUG, change with random.Random().shuffle(columns) for random order
+    columns = columns[:args.quantitative + 1]
+    print(columns)
+
+    validUsers = None
+    for col in columns:
+        validUsers = utilityMatrix[utilityMatrix[col] != 0] if validUsers is None else validUsers[validUsers[col] != 0]
+
+    train = validUsers[columns[:-1]]
+    test = validUsers[columns[-1]]
+    #* ---------------------------------------
+    
+    #* ---------- Linear Regressor ------------
+    #* ----------------------------------------
 
 
 
