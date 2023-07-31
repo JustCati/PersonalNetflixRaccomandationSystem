@@ -12,14 +12,18 @@ from dataset.raccomenderDataset import getUtilityMatrix
 
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
+from sklearn.linear_model import LinearRegression
+
+from sklearn.metrics import mean_squared_error
 
 
 
 
 def main():
     parser = argparse.ArgumentParser(description="Raccomender")
-    parser.add_argument("--qualitative", type=int, default=None, help="Qualitative search")
-    parser.add_argument("--quantitative", type=int, default=None, help="Quantitative search")
+    parser.add_argument("-q", "--qualitative", action="store_true", default=None, help="Show naive qualitative raccomendation")
+    parser.add_argument("-c", "--count", type=int, default=1, help="Set the number of ratings to use for training for each user")
+    parser.add_argument("-l", "--linear", action="store_true", help="Use linear regression for raccomendation")
     args = parser.parse_args()
 
 
@@ -70,7 +74,7 @@ def main():
     #* --------------------------------------------
 
 
-    #* ---------- Naive --------
+    #* ---------- Naive Raccomender based on similarity --------
     if args.qualitative is not None:
         while((title := input("Inserisci il titolo del film: ").strip()) not in movies.Titolo.values):
             print("Film non trovato")
@@ -80,7 +84,7 @@ def main():
 
         print("\nFilm simili con euclidean come distanza:")
         print(getMostSimilarEuclidean(movies, embeddings, title))
-    #* -------------------------------
+    #* ---------------------------------------------------------
 
 
     #* ---------- Utility Matrix -------------
@@ -91,22 +95,41 @@ def main():
         utilityMatrix = pd.read_parquet("utilitymatrix.parquet")
     #* ---------------------------------------
 
-
     #* ---------- Dataset Creation ------------
     columns = utilityMatrix.columns.tolist()
     random.Random(42).shuffle(columns)          #! DEBUG, change with random.Random().shuffle(columns) for random order
-    columns = columns[:args.quantitative + 1]
-    print(columns)
+    columns = columns[:args.count]
+    remaining = [elem for elem in utilityMatrix.columns.tolist() if elem not in columns]
 
     validUsers = None
     for col in columns:
         validUsers = utilityMatrix[utilityMatrix[col] != 0] if validUsers is None else validUsers[validUsers[col] != 0]
 
-    train = validUsers[columns[:-1]]
-    test = validUsers[columns[-1]]
+    train = validUsers[columns]
+    test = validUsers[remaining]
     #* ---------------------------------------
-    
-    #* ---------- Linear Regressor ------------
+
+
+    #* ---------- Linear Regressor -------------
+    if args.linear:
+        preds = np.array([])
+        ratings = np.array([])
+        model = LinearRegression(n_jobs=-1)
+
+        for ((_, rowX), (_, rowY)) in zip(train.iterrows(), test.iterrows()):
+            dfTrain = pd.DataFrame({"Titolo" : train.columns, "Embeddings" : [embeddings[embeddings.Titolo == elem].allEmbeddings.values[0] for elem in train.columns], "Rating" : rowX.values})
+            dfTest = pd.DataFrame({"Titolo" : test.columns, "Embeddings" : [embeddings[embeddings.Titolo == rem].allEmbeddings.values[0] for rem in remaining], "Rating" : rowY.values})
+            dfTest = dfTest[dfTest.Rating != 0]
+
+            model.fit(dfTrain.Embeddings.tolist(), dfTrain.Rating.tolist())
+            pred = model.predict(dfTest.Embeddings.tolist())
+            
+            preds = np.append(preds, pred)
+            ratings = np.append(ratings, dfTest.Rating.values)
+
+        print()
+        print("Linear Regression: ")
+        print(f"RMSE: {mean_squared_error(ratings, preds, squared=True)}")
     #* ----------------------------------------
 
 
