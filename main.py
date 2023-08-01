@@ -6,15 +6,17 @@ import pandas as pd
 
 from raccomend.distances import *
 from raccomend.embeddings import *
+from raccomend.predict import predict
 
 from dataset.dataScraper import getDataset
 from dataset.raccomenderDataset import getUtilityMatrix
 
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
-from sklearn.linear_model import LinearRegression
 
+from scipy.stats import spearmanr
 from sklearn.metrics import mean_squared_error
+from sklearn.feature_selection import r_regression
 
 
 
@@ -24,6 +26,7 @@ def main():
     parser.add_argument("-q", "--qualitative", action="store_true", default=None, help="Show naive qualitative raccomendation")
     parser.add_argument("-c", "--count", type=int, default=1, help="Set the number of ratings to use for training for each user")
     parser.add_argument("-l", "--linear", action="store_true", help="Use linear regression for raccomendation")
+    parser.add_argument("-k", "--knn", action="store_true", help="Use knn regression for raccomendation")
     args = parser.parse_args()
 
 
@@ -112,24 +115,20 @@ def main():
 
     #* ---------- Linear Regressor -------------
     if args.linear:
-        preds = np.array([])
-        ratings = np.array([])
-        model = LinearRegression(n_jobs=-1)
+        preds, ratings = predict(train, test, embeddings, remaining)
 
-        for ((_, rowX), (_, rowY)) in zip(train.iterrows(), test.iterrows()):
-            dfTrain = pd.DataFrame({"Titolo" : train.columns, "Embeddings" : [embeddings[embeddings.Titolo == elem].allEmbeddings.values[0] for elem in train.columns], "Rating" : rowX.values})
-            dfTest = pd.DataFrame({"Titolo" : test.columns, "Embeddings" : [embeddings[embeddings.Titolo == rem].allEmbeddings.values[0] for rem in remaining], "Rating" : rowY.values})
-            dfTest = dfTest[dfTest.Rating != 0]
+        if preds.shape[0] == 0:
+            print("No ratings found")
+            return
+    #* ----------------------------------------
+    
+    #* ---------- KNN Regressor ---------------
+    if args.knn:
+        preds, ratings = predict(train, test, embeddings, remaining, model="knn", kneighbors=args.knn)
 
-            model.fit(dfTrain.Embeddings.tolist(), dfTrain.Rating.tolist())
-            pred = model.predict(dfTest.Embeddings.tolist())
-            
-            preds = np.append(preds, pred)
-            ratings = np.append(ratings, dfTest.Rating.values)
-
-        print()
-        print("Linear Regression: ")
-        print(f"RMSE: {mean_squared_error(ratings, preds, squared=True)}")
+        if preds.shape[0] == 0:
+            print("No ratings found")
+            return
     #* ----------------------------------------
 
 
