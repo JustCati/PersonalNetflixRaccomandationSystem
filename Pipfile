@@ -16,6 +16,7 @@ scikit-surprise = "*"
 sentence-transformers = "*"
 parallel-pandas = "*"
 argparse = "*"
+statsmodels = "*"
 
 [dev-packages]
 
