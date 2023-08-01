@@ -6,11 +6,13 @@ from sklearn.neighbors import KNeighborsRegressor as KNNRegressor
 
 
 
-def predict(train, test, embeddings, remaining, model="linear", **kwargs) -> (np.array, np.array):
-    if model == "linear":
+def predict(train, test, embeddings, remaining, **kwargs) -> (np.array, np.array):
+    if kwargs["model"] == "linear":
         model = LinearRegression(n_jobs=-1)
-    else: 
+    elif kwargs["model"] == "knn": 
         model = KNNRegressor(n_jobs=-1, n_neighbors=kwargs["kneighbors"], metric="cosine")
+    else:
+        raise Exception("Model not supported")
 
     preds = np.array([])
     ratings = np.array([])
