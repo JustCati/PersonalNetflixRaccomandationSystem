@@ -30,6 +30,8 @@ def main():
     parser.add_argument("-l", "--linear", action="store_true", help="Use linear regression for raccomendation")
     parser.add_argument("-k", "--knn", action="store_true", help="Use knn regression for raccomendation")
     parser.add_argument("-o", "--ordinal", action="store_true", help="Use ordinal regression for raccomendation")
+    parser.add_argument("-s", "--svr", action="store_true", help="Use svr regression for raccomendation")
+    parser.add_argument("-r", "--rf", action="store_true", help="Use random forest regression for raccomendation")
     args = parser.parse_args()
 
 
@@ -126,6 +128,36 @@ def main():
 
         print()
         print("Linear Regression: ")
+        print(f"RMSE: {mean_squared_error(ratings, preds, squared=True)}")
+        print(f"Pearson Correlation: {pearsonr(preds, ratings).statistic}")
+        print(f"Spearman Correlation: {spearmanr(preds, ratings).statistic}")
+    #* ----------------------------------------
+    
+    #* ---------- SVR Regressor -------------
+    if args.svr:
+        preds, ratings = predict(train, test, embeddings, remaining, model="svr")
+
+        if preds.shape[0] == 0:
+            print("No ratings found")
+            return
+
+        print()
+        print("SVR Regression: ")
+        print(f"RMSE: {mean_squared_error(ratings, preds, squared=True)}")
+        print(f"Pearson Correlation: {pearsonr(preds, ratings).statistic}")
+        print(f"Spearman Correlation: {spearmanr(preds, ratings).statistic}")
+    #* ----------------------------------------
+    
+    #* ---------- RF Regressor -------------
+    if args.rf:
+        preds, ratings = predict(train, test, embeddings, remaining, model="rf")
+
+        if preds.shape[0] == 0:
+            print("No ratings found")
+            return
+
+        print()
+        print("Random Forest Regression: ")
         print(f"RMSE: {mean_squared_error(ratings, preds, squared=True)}")
         print(f"Pearson Correlation: {pearsonr(preds, ratings).statistic}")
         print(f"Spearman Correlation: {spearmanr(preds, ratings).statistic}")
