@@ -7,7 +7,7 @@ import pandas as pd
 
 from raccomend.distances import *
 from raccomend.embeddings import *
-from raccomend.predict import predict
+from raccomend.predict import predict, neuralNetwork
 
 from dataset.dataScraper import getDataset
 from dataset.raccomenderDataset import getUtilityMatrix
@@ -23,15 +23,14 @@ from statsmodels.tools.sm_exceptions import ConvergenceWarning
 
 warnings.simplefilter('ignore', ConvergenceWarning)
 
+
+
+
 def main():
     parser = argparse.ArgumentParser(description="Raccomender")
     parser.add_argument("-q", "--qualitative", action="store_true", default=None, help="Show naive qualitative raccomendation")
     parser.add_argument("-c", "--count", type=int, default=1, help="Set the number of ratings to use for training for each user")
-    parser.add_argument("-l", "--linear", action="store_true", help="Use linear regression for raccomendation")
-    parser.add_argument("-k", "--knn", action="store_true", help="Use knn regression for raccomendation")
-    parser.add_argument("-o", "--ordinal", action="store_true", help="Use ordinal regression for raccomendation")
-    parser.add_argument("-s", "--svr", action="store_true", help="Use svr regression for raccomendation")
-    parser.add_argument("-r", "--rf", action="store_true", help="Use random forest regression for raccomendation")
+    parser.add_argument("-a", "--algorithm", type=str, default="", help="Set the algorithm to use for raccomendation")
     args = parser.parse_args()
 
 
@@ -118,68 +117,23 @@ def main():
     #* ---------------------------------------
 
 
-    #* ---------- Linear Regressor -------------
-    if args.linear:
-        preds, ratings = predict(train, test, embeddings, remaining, model="linear")
+    #* ---------- Prediction -------------
+    if args.algorithm in ["linear", "knn", "svr", "rf"]:
+        preds, ratings = predict(train, test, embeddings, remaining, model=args.algorithm, kneighbors=args.count)
 
         if preds.shape[0] == 0:
             print("No ratings found")
             return
 
         print()
-        print("Linear Regression: ")
-        print(f"RMSE: {mean_squared_error(ratings, preds, squared=True)}")
-        print(f"Pearson Correlation: {pearsonr(preds, ratings).statistic}")
-        print(f"Spearman Correlation: {spearmanr(preds, ratings).statistic}")
-    #* ----------------------------------------
-    
-    #* ---------- SVR Regressor -------------
-    if args.svr:
-        preds, ratings = predict(train, test, embeddings, remaining, model="svr")
-
-        if preds.shape[0] == 0:
-            print("No ratings found")
-            return
-
-        print()
-        print("SVR Regression: ")
-        print(f"RMSE: {mean_squared_error(ratings, preds, squared=True)}")
-        print(f"Pearson Correlation: {pearsonr(preds, ratings).statistic}")
-        print(f"Spearman Correlation: {spearmanr(preds, ratings).statistic}")
-    #* ----------------------------------------
-    
-    #* ---------- RF Regressor -------------
-    if args.rf:
-        preds, ratings = predict(train, test, embeddings, remaining, model="rf")
-
-        if preds.shape[0] == 0:
-            print("No ratings found")
-            return
-
-        print()
-        print("Random Forest Regression: ")
-        print(f"RMSE: {mean_squared_error(ratings, preds, squared=True)}")
-        print(f"Pearson Correlation: {pearsonr(preds, ratings).statistic}")
-        print(f"Spearman Correlation: {spearmanr(preds, ratings).statistic}")
-    #* ----------------------------------------
-    
-    #* ---------- KNN Regressor ---------------
-    if args.knn:
-        preds, ratings = predict(train, test, embeddings, remaining, model="knn", kneighbors=args.knn)
-
-        if preds.shape[0] == 0:
-            print("No ratings found")
-            return
-
-        print()
-        print("KNN Regression: ")
+        print(f"{args.algorithm} Regression: ")
         print(f"RMSE: {mean_squared_error(ratings, preds, squared=True)}")
         print(f"Pearson Correlation: {pearsonr(preds, ratings).statistic}")
         print(f"Spearman Correlation: {spearmanr(preds, ratings).statistic}")
     #* ----------------------------------------
 
     #* ---------- Ordinal Regression ----------
-    if args.ordinal:
+    if args.algorithm == "ordinal":
         preds = np.array([])
         ratings = np.array([])
 
@@ -212,6 +166,7 @@ def main():
         print(f"Pearson Correlation: {pearsonr(preds, ratings).statistic}")
         print(f"Spearman Correlation: {spearmanr(preds, ratings).statistic}")
     #* ----------------------------------------
+
 
 
 

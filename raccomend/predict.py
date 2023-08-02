@@ -8,6 +8,8 @@ from sklearn.neighbors import KNeighborsRegressor as KNNRegressor
 
 
 
+
+
 def predict(train, test, embeddings, remaining, **kwargs) -> (np.array, np.array):
     if kwargs["model"] == "linear":
         model = LinearRegression(n_jobs=-1)
@@ -16,7 +18,7 @@ def predict(train, test, embeddings, remaining, **kwargs) -> (np.array, np.array
     elif kwargs["model"] == "svr":
         model = SVR()
     elif kwargs["model"] == "rf":
-        model = RandomForestRegressor(n_estimators=1000, n_jobs=-1)
+        model = RandomForestRegressor(n_estimators=100, n_jobs=-1)
     else:
         raise Exception("Model not supported")
 
@@ -35,3 +37,4 @@ def predict(train, test, embeddings, remaining, **kwargs) -> (np.array, np.array
         ratings = np.append(ratings, dfTest.Rating.values)
         
     return preds, ratings
+    
