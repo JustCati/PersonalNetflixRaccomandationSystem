@@ -1,13 +1,12 @@
 import os
 import random
-import warnings
 import argparse
 import numpy as np
 import pandas as pd
 
 from raccomend.distances import *
 from raccomend.embeddings import *
-from raccomend.predict import predict, neuralNetwork
+from raccomend.predict import predict
 
 from dataset.dataScraper import getDataset
 from dataset.raccomenderDataset import getUtilityMatrix
@@ -18,10 +17,6 @@ from sklearn.preprocessing import StandardScaler
 from scipy.stats import spearmanr, pearsonr
 from sklearn.metrics import mean_squared_error
 
-from statsmodels.miscmodels.ordinal_model import OrderedModel
-from statsmodels.tools.sm_exceptions import ConvergenceWarning
-
-warnings.simplefilter('ignore', ConvergenceWarning)
 
 
 
@@ -118,51 +113,17 @@ def main():
 
 
     #* ---------- Prediction -------------
-    if args.algorithm in ["linear", "knn", "svr", "rf"]:
-        preds, ratings = predict(train, test, embeddings, remaining, model=args.algorithm, kneighbors=args.count)
+    if args.algorithm in ["linear", "knn", "ordinal"]:
+        preds, ratings, rmse = predict(train, test, embeddings, remaining, model=args.algorithm, kneighbors=args.count)
 
         if preds.shape[0] == 0:
             print("No ratings found")
             return
 
         print()
-        print(f"{args.algorithm} Regression: ")
-        print(f"RMSE: {mean_squared_error(ratings, preds, squared=True)}")
-        print(f"Pearson Correlation: {pearsonr(preds, ratings).statistic}")
-        print(f"Spearman Correlation: {spearmanr(preds, ratings).statistic}")
-    #* ----------------------------------------
-
-    #* ---------- Ordinal Regression ----------
-    if args.algorithm == "ordinal":
-        preds = np.array([])
-        ratings = np.array([])
-
-        for ((_, rowX), (_, rowY)) in zip(train.iterrows(), test.iterrows()):
-            dfTrain = pd.DataFrame({"Titolo" : train.columns, "Embeddings" : [embeddings[embeddings.Titolo == elem].allEmbeddings.values[0] for elem in train.columns], "Rating" : rowX.values})
-            dfTest = pd.DataFrame({"Titolo" : test.columns, "Embeddings" : [embeddings[embeddings.Titolo == rem].allEmbeddings.values[0] for rem in remaining], "Rating" : rowY.values})
-            dfTest = dfTest[dfTest.Rating != 0]
-
-            catType = pd.api.types.CategoricalDtype(categories=[1, 2, 3, 4, 5], ordered=True)
-            dfTrain.Rating = dfTrain.Rating.astype(catType)
-            dfTest.Rating = dfTest.Rating.astype(catType)
-
-            model = OrderedModel(np.array(dfTrain.Rating).reshape(-1, 1), np.array(dfTrain.Embeddings.tolist()), distr="logit", hasconst=False)
-            model = model.fit(method="bfgs", disp=False)
-
-            pred = model.model.predict(model.params, np.array(dfTest.Embeddings.tolist()))
-            pred = np.where(pred != 0, pred, np.nan)
-            pred = np.array([np.nanargmin(elem) + 1 for elem in pred])
-
-            preds = np.append(preds, pred)
-            ratings = np.append(ratings, dfTest.Rating.values)
-
-        if preds.shape[0] == 0:
-            print("No ratings found")
-            return
-
-        print()
-        print("Ordinal Logit Regression: ")
-        print(f"RMSE: {mean_squared_error(ratings, preds, squared=True)}")
+        print(f"{args.algorithm.capitalize()} Regression: ")
+        print(f"RMSE: {mean_squared_error(ratings, preds, squared=False)}")
+        print(f"RMSE mean: {rmse}")
         print(f"Pearson Correlation: {pearsonr(preds, ratings).statistic}")
         print(f"Spearman Correlation: {spearmanr(preds, ratings).statistic}")
     #* ----------------------------------------
