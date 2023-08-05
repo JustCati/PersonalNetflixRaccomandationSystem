@@ -11,8 +11,7 @@ from raccomend.predict import predict
 from dataset.dataScraper import getDataset
 from dataset.raccomenderDataset import getUtilityMatrix
 
-from sklearn.decomposition import PCA
-from sklearn.preprocessing import StandardScaler
+from prince import MCA
 
 from scipy.stats import spearmanr, pearsonr
 from sklearn.metrics import mean_squared_error
@@ -42,37 +41,33 @@ def main():
         embeddings = pd.read_parquet("embeddings.parquet")
     else:
         embeddings = pd.DataFrame({"id" : movies.id, "Tipologia" : movies.Tipologia, "Titolo" : movies.Titolo}, columns=["id", "Tipologia", "Titolo"])
-        embeddings["Embeddings_Trama"] = [np.full((768,), np.inf, dtype=np.float32) for _ in range(len(movies))]
+        embeddings["Embeddings_Trama"] = [np.full((1024,), np.inf, dtype=np.float32) for _ in range(len(movies))]
     #* ------------------------------------
 
 
     #* ---------- Get Embeddings ------------
     toUpdate = False
-    if (embeddings.Embeddings_Trama.values[0] == [np.full((768,), np.inf, dtype=np.float32) for _ in range(len(movies))]).all():
+    if (embeddings.Embeddings_Trama.values[0] == [np.full((1024,), np.inf, dtype=np.float32) for _ in range(len(movies))]).all():
         embeddings = getEmbeddingsTrama_E5_LargeV2(embeddings, movies, shuffle=True)
         toUpdate = True
 
-
-    if toUpdate or "allEmbeddings" not in embeddings.columns:
+    if toUpdate:
         embeddings = getFeatureGenere(embeddings, movies)
         embeddings = getFeatureAttori(embeddings, movies, colName="Regia")
         embeddings = getFeatureAttori(embeddings, movies, colName="Attori")
         embeddings = getFeatureTipologia(embeddings, movies)
 
-        embeddings["allEmbeddings"] = embeddings.apply(lambda x: np.concatenate((x["Embeddings_Trama"], x["Embeddings_Genere"], x["Embeddings_Regia"], x["Embeddings_Attori"], x["Embeddings_Tipologia"]), dtype=np.float32), axis=1)
-        embeddings = embeddings.drop(columns=["Embeddings_Genere", "Embeddings_Regia", "Embeddings_Attori", "Embeddings_Tipologia"])
-        embeddings.allEmbeddings = embeddings.apply(lambda x: StandardScaler().fit_transform(x["allEmbeddings"].reshape(-1, 1)).reshape(-1), axis=1)
-
-        pca = PCA(n_components=1024)
-        data = embeddings.allEmbeddings.values
-        data = np.array([np.array(elem) for elem in data])
-
-        pca.fit(data)
-        data = pca.transform(data)
-        embeddings.allEmbeddings = data.tolist()
+        for col in ["Embeddings_Genere", "Embeddings_Regia", "Embeddings_Attori", "Embeddings_Tipologia"]:
+            if len(embeddings[col].values[0]) > 1024:
+                mca = MCA(n_components=1024, engine="sklearn")
+            else:
+                mca = MCA(n_components=len(embeddings[col].values[0]), engine="sklearn")
+            data = embeddings[col].values
+            data = pd.DataFrame(data.tolist())
+            mca.fit(data)
+            data = mca.transform(data)
+            embeddings[col] = data.values.tolist()
         embeddings.to_parquet("embeddings.parquet")
-        
-        embeddings = embeddings.drop(columns=["Embeddings_Trama"])
     #* --------------------------------------------
 
 
@@ -81,11 +76,15 @@ def main():
         while((title := input("Inserisci il titolo del film: ").strip()) not in movies.Titolo.values):
             print("Film non trovato")
 
+        embeddings["allEmbeddings"] = embeddings.apply(lambda x: np.concatenate([x.Embeddings_Trama, x.Embeddings_Genere, x.Embeddings_Regia, x.Embeddings_Attori, x.Embeddings_Tipologia]), axis=1)
+
         print("Film simili con cosine come distanza:")
         print(getMostSimilarCosine(movies, embeddings, title))
 
         print("\nFilm simili con euclidean come distanza:")
         print(getMostSimilarEuclidean(movies, embeddings, title))
+
+        embeddings = embeddings.drop(columns=["allEmbeddings"])
     #* ---------------------------------------------------------
 
 
@@ -114,7 +113,7 @@ def main():
 
     #* ---------- Prediction -------------
     if args.algorithm in ["linear", "knn", "ordinal"]:
-        preds, ratings, rmse = predict(train, test, embeddings, remaining, model=args.algorithm, kneighbors=args.count)
+        preds, ratings, rmse = predict(train, test, embeddings, model=args.algorithm, kneighbors=args.count)
 
         if preds.shape[0] == 0:
             print("No ratings found")

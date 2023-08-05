@@ -5,12 +5,22 @@ from sentence_transformers import SentenceTransformer
 from sklearn.preprocessing import MultiLabelBinarizer, OneHotEncoder
 
 
+def encode(trama, model):
+    if len(trama.split(" ")) > 512:
+        totalEmbeddings = []
+        for line in trama.split("\n"):
+            totalEmbeddings.append(model.encode("query: " + line))
+        return np.array(totalEmbeddings).mean(axis=0)
+    else:
+        return model.encode("query: " + trama)
+
+
 def getEmbeddingsTrama_E5_LargeV2(df, movies, shuffle=True):
     if shuffle:
         df = df.sample(frac=1).reset_index(drop=True)
 
-    model = SentenceTransformer('airnicco8/xlm-roberta-en-it-de', device=("mps" if torch.backends.mps.is_available() else "cuda" if torch.cuda.is_available() else "cpu"))
-    df.Embeddings_Trama = df.apply((lambda x: model.encode(movies[(movies.id == x.id) & (movies.Tipologia == x.Tipologia)].Trama.values[0]) if (x.Embeddings_Trama == np.inf).all() else x.Embeddings_Trama), axis=1)
+    model = SentenceTransformer('intfloat/multilingual-e5-large', device=("mps" if torch.backends.mps.is_available() else "cuda" if torch.cuda.is_available() else "cpu"))
+    df.Embeddings_Trama = df.apply((lambda x: encode(movies[(movies.id == x.id) & (movies.Tipologia == x.Tipologia)].Trama.values[0], model) if (x.Embeddings_Trama == np.inf).all() else x.Embeddings_Trama), axis=1)
     df.to_parquet("embeddings.parquet")
     return df
 
