@@ -42,13 +42,13 @@ def main():
         embeddings = pd.read_parquet("embeddings.parquet")
     else:
         embeddings = pd.DataFrame({"id" : movies.id, "Tipologia" : movies.Tipologia, "Titolo" : movies.Titolo}, columns=["id", "Tipologia", "Titolo"])
-        embeddings["Embeddings_Trama"] = [np.full((1024,), np.inf, dtype=np.float32) for _ in range(len(movies))]
+        embeddings["Embeddings_Trama"] = [np.full((768,), np.inf, dtype=np.float32) for _ in range(len(movies))]
     #* ------------------------------------
 
 
     #* ---------- Get Embeddings ------------
     toUpdate = False
-    if (embeddings.Embeddings_Trama.values[0] == [np.full((1024,), np.inf, dtype=np.float32) for _ in range(len(movies))]).all():
+    if (embeddings.Embeddings_Trama.values[0] == [np.full((768,), np.inf, dtype=np.float32) for _ in range(len(movies))]).all():
         embeddings = getEmbeddingsTrama_E5_LargeV2(embeddings, movies, shuffle=True)
         toUpdate = True
 
