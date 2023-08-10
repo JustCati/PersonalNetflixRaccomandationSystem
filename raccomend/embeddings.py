@@ -1,8 +1,35 @@
 import torch
 import numpy as np
+import pandas as pd
+
+from prince import MCA, MFA
 
 from sentence_transformers import SentenceTransformer
 from sklearn.preprocessing import MultiLabelBinarizer, OneHotEncoder
+
+
+def reduceCategorial(df, colName, n_components=1024):
+    if len(df[colName].values[0]) > n_components:
+        mca = MCA(n_components=n_components, engine="sklearn")
+    else:
+        mca = MCA(n_components=len(df[colName].values[0]), engine="sklearn")
+    data = df[colName].values
+    data = pd.DataFrame(data.tolist())
+    mca.fit(data)
+    data = mca.transform(data)
+    return data.values.tolist()
+
+
+def reduceMFA(df, colName, n_components=1024):
+    mfa = MFA(n_components=n_components, engine="sklearn")
+    data = df[colName].values
+    data = pd.DataFrame(data.tolist())
+    groups = {
+        "allEmbeddings" : [index for index in range(len(data.columns))]
+    }
+    mfa.fit(data, groups=groups)
+    data = mfa.transform(data)
+    return data.values.tolist()
 
 
 def encode(trama, model):

@@ -11,8 +11,6 @@ from raccomend.predict import predict
 from dataset.dataScraper import getDataset
 from dataset.raccomenderDataset import getUtilityMatrix
 
-from prince import MCA
-
 from scipy.stats import spearmanr, pearsonr
 from sklearn.metrics import mean_squared_error
 
@@ -58,16 +56,11 @@ def main():
         embeddings = getFeatureTipologia(embeddings, movies)
 
         for col in ["Embeddings_Genere", "Embeddings_Regia", "Embeddings_Attori", "Embeddings_Tipologia"]:
-            if len(embeddings[col].values[0]) > 1024:
-                mca = MCA(n_components=1024, engine="sklearn")
-            else:
-                mca = MCA(n_components=len(embeddings[col].values[0]), engine="sklearn")
-            data = embeddings[col].values
-            data = pd.DataFrame(data.tolist())
-            mca.fit(data)
-            data = mca.transform(data)
-            embeddings[col] = data.values.tolist()
+            embeddings[col] = reduceCategorial(embeddings, col, 1024)
         embeddings.to_parquet("embeddings.parquet")
+
+    embeddings["allEmbeddings"] = embeddings.apply(lambda row: np.concatenate((row["Embeddings_Trama"], row["Embeddings_Genere"], row["Embeddings_Regia"], row["Embeddings_Attori"], row["Embeddings_Tipologia"])), axis=1)
+    embeddings["allEmbeddings"] = reduceMFA(embeddings, "allEmbeddings", 1024)
     #* --------------------------------------------
 
 
@@ -75,8 +68,8 @@ def main():
     if args.qualitative is not None:
         while((title := input("Inserisci il titolo del film: ").strip()) not in movies.Titolo.values):
             print("Film non trovato")
-
-        embeddings["allEmbeddings"] = embeddings.apply(lambda x: np.concatenate([x.Embeddings_Trama, x.Embeddings_Genere, x.Embeddings_Regia, x.Embeddings_Attori, x.Embeddings_Tipologia]), axis=1)
+        
+        # title = "The Conjuring - Il caso Enfield"
 
         print("Film simili con cosine come distanza:")
         print(getMostSimilarCosine(movies, embeddings, title))
