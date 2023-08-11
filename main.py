@@ -12,7 +12,7 @@ from dataset.dataScraper import getDataset
 from dataset.raccomenderDataset import getUtilityMatrix
 
 from scipy.stats import spearmanr, pearsonr
-from sklearn.metrics import mean_squared_error
+from sklearn.metrics import mean_squared_error, ndcg_score
 
 
 
@@ -106,7 +106,7 @@ def main():
 
     #* ---------- Prediction -------------
     if args.algorithm in ["linear", "knn", "ordinal"]:
-        preds, ratings, rmse = predict(train, test, embeddings, model=args.algorithm, kneighbors=args.count)
+        preds, ratings = predict(train, test, embeddings, model=args.algorithm, kneighbors=args.count)
 
         if preds.shape[0] == 0:
             print("No ratings found")
@@ -115,7 +115,7 @@ def main():
         print()
         print(f"{args.algorithm.capitalize()} Regression: ")
         print(f"RMSE: {mean_squared_error(ratings, preds, squared=False)}")
-        print(f"RMSE mean: {rmse}")
+        print(f"NDCg: {ndcg_score([ratings], [preds])}")
         print(f"Pearson Correlation: {pearsonr(preds, ratings).statistic}")
         print(f"Spearman Correlation: {spearmanr(preds, ratings).statistic}")
     #* ----------------------------------------

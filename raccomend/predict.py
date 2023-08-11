@@ -20,7 +20,6 @@ def predict(train, test, embeddings, **kwargs) -> (np.array, np.array, float):
     else:
         raise Exception("Model not supported")
 
-    rmses = []
     preds = np.array([])
     ratings = np.array([])
 
@@ -59,10 +58,9 @@ def predict(train, test, embeddings, **kwargs) -> (np.array, np.array, float):
                                             dfTest.Embeddings_Tipologia.values.tolist()), axis=1)
         model.fit(allEmbeddingsTrain, dfTrain.Rating.tolist())
         pred = model.predict(allEmbeddingsTest)
-        # pred = np.rint(pred)
+        pred = np.rint(pred)
 
         preds = np.append(preds, pred)
         ratings = np.append(ratings, dfTest.Rating.values)
-        rmses = np.append(rmses, mean_squared_error(dfTest.Rating.values, pred, squared=False))
 
-    return preds, ratings, rmses.mean()
+    return preds, ratings
