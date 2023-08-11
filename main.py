@@ -115,11 +115,10 @@ def main():
         print()
         print(f"{args.algorithm.capitalize()} Regression: ")
         print(f"RMSE: {mean_squared_error(ratings, preds, squared=False)}")
-        print(f"NDCg: {ndcg_score([ratings], [preds])}")
+        print(f"NDCG: {ndcg_score([ratings], [preds])}")
         print(f"Pearson Correlation: {pearsonr(preds, ratings).statistic}")
         print(f"Spearman Correlation: {spearmanr(preds, ratings).statistic}")
     #* ----------------------------------------
-
 
 
 
