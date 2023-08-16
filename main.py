@@ -21,6 +21,7 @@ from sklearn.metrics import mean_squared_error, ndcg_score
 def main():
     parser = argparse.ArgumentParser(description="Raccomender")
     parser.add_argument("-q", "--qualitative", action="store_true", default=None, help="Show naive qualitative raccomendation")
+    parser.add_argument("-u", "--user", action="store_true", default=None, help="Show results with user profile similarity")
     parser.add_argument("-c", "--count", type=int, default=1, help="Set the number of ratings to use for training for each user")
     parser.add_argument("-a", "--algorithm", type=str, default="", help="Set the algorithm to use for raccomendation")
     args = parser.parse_args()
@@ -118,6 +119,7 @@ def main():
         print(f"NDCG: {ndcg_score([ratings], [preds])}")
         print(f"Pearson Correlation: {pearsonr(preds, ratings).statistic}")
         print(f"Spearman Correlation: {spearmanr(preds, ratings).statistic}")
+        print(f"Ratings predicted: {set(preds)}")
     #* ----------------------------------------
 
 
