@@ -12,7 +12,7 @@ from dataset.dataScraper import getDataset
 from dataset.raccomenderDataset import getUtilityMatrix
 
 from scipy.stats import spearmanr, pearsonr
-from sklearn.metrics import mean_squared_error, ndcg_score
+from sklearn.metrics import mean_squared_error, ndcg_score, mean_absolute_error
 
 
 
@@ -115,11 +115,12 @@ def main():
 
         print()
         print(f"{args.algorithm.capitalize()} Regression: ")
+        print(f"MAE: {mean_absolute_error(ratings, preds)}")
         print(f"RMSE: {mean_squared_error(ratings, preds, squared=False)}")
         print(f"NDCG: {ndcg_score([ratings], [preds])}")
         print(f"Pearson Correlation: {pearsonr(preds, ratings).statistic}")
         print(f"Spearman Correlation: {spearmanr(preds, ratings).statistic}")
-        print(f"Ratings predicted: {set(preds)}")
+        print(f"Ratings predicted: {set(np.rint(preds))}")
     #* ----------------------------------------
 
 
