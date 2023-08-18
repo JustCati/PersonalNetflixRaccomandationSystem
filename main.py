@@ -11,7 +11,7 @@ from raccomend.predict import predict
 from dataset.dataScraper import getDataset
 from dataset.raccomenderDataset import getUtilityMatrix
 
-from scipy.stats import spearmanr, pearsonr
+from scipy.stats import spearmanr
 from sklearn.metrics import mean_squared_error, ndcg_score, mean_absolute_error
 
 
@@ -61,7 +61,7 @@ def main():
         embeddings.to_parquet("embeddings.parquet")
 
     embeddings["allEmbeddings"] = embeddings.apply(lambda row: np.concatenate((row["Embeddings_Trama"], row["Embeddings_Genere"], row["Embeddings_Regia"], row["Embeddings_Attori"], row["Embeddings_Tipologia"])), axis=1)
-    embeddings["allEmbeddings"] = reduceMFA(embeddings, "allEmbeddings", 1024)
+    embeddings["allEmbeddings"] = reducePCA(embeddings, "allEmbeddings", 1024)
     #* --------------------------------------------
 
 
@@ -118,7 +118,6 @@ def main():
         print(f"MAE: {mean_absolute_error(ratings, preds)}")
         print(f"RMSE: {mean_squared_error(ratings, preds, squared=False)}")
         print(f"NDCG: {ndcg_score([ratings], [preds])}")
-        print(f"Pearson Correlation: {pearsonr(preds, ratings).statistic}")
         print(f"Spearman Correlation: {spearmanr(preds, ratings).statistic}")
         print(f"Ratings predicted: {set(np.rint(preds))}")
     #* ----------------------------------------
