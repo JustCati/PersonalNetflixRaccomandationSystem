@@ -22,7 +22,7 @@ def reduceCategorial(df, colName, n_components=1024):
 
 
 def reducePCA(df, colName, n_components=1024):
-    pca = PCA(n_components="mle")
+    pca = PCA(n_components=n_components)
     data = df[colName].values
     data = np.array([np.array(elem) for elem in data])
     pca.fit(data)
