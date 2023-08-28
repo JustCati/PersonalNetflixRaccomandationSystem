@@ -77,8 +77,6 @@ def main():
 
         print("\nFilm simili con euclidean come distanza:")
         print(getMostSimilarEuclidean(movies, embeddings, title))
-
-        embeddings = embeddings.drop(columns=["allEmbeddings"])
     #* ---------------------------------------------------------
 
 
@@ -121,6 +119,44 @@ def main():
         print(f"Spearman Correlation: {spearmanr(preds, ratings).statistic}")
         print(f"Ratings predicted: {set(np.rint(preds))}")
     #* ----------------------------------------
+
+
+    # #*-----------------------------------------
+    # if args.user is not None:
+    #     for ((_, rowX), (_, rowY)) in zip(train.iterrows(), test.iterrows()):
+    #         dfTrain = pd.DataFrame({
+    #             "Titolo" : train.columns,
+    #             "allEmbeddings" : [embeddings[embeddings.Titolo == elem].allEmbeddings.values[0] for elem in train.columns],
+    #             "Rating" : rowX.values,
+    #         })
+    #         dfTest = pd.DataFrame({
+    #             "Titolo" : test.columns,
+    #             "allEmbeddings" : [embeddings[embeddings.Titolo == elem].allEmbeddings.values[0] for elem in test.columns],
+    #             "Rating" : rowY.values,
+    #         })
+    #         dfTest = dfTest[dfTest.Rating != 0]
+
+    #         meanRating = dfTrain.Rating.mean()
+    #         normalizedRating = dfTrain.Rating.values - meanRating
+    #         userProfile = np.zeros((len(normalizedRating), 1024))
+    #         for i, elem, embedding in zip(range(len(dfTrain.allEmbeddings.values)), normalizedRating, dfTrain.allEmbeddings.values):
+    #             userProfile[i] = np.array([elem]) * embedding
+    #         userProfile = userProfile.sum(axis=0) / len(dfTrain.allEmbeddings.values)
+
+    #         from sklearn.metrics.pairwise import cosine_similarity
+    #         for elem, embedding in zip(dfTest.Titolo.values, dfTest.allEmbeddings.values):
+    #             cossim = cosine_similarity([userProfile], [embedding])[0][0]
+    #             # ((x - oldMin) / (oldMax - oldMin)) * (newMax - newMin) + newMin
+    #             rating = ((cossim - -1) / (1 - -1)) * (5 - 1) + 1
+                
+    #             print(f"Film: {elem}")
+    #             print(f"Rating: {dfTest[dfTest.Titolo == elem].Rating.values[0]}")
+    #             print(f"Similarità: {cossim}")
+    #             print(f"Rating predetto: {round(rating, 0)}")
+    #             print()
+
+    #         exit()
+    # #* ---------------------------------------
 
 
 
