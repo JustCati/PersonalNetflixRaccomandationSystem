@@ -12,6 +12,7 @@ from dataset.dataScraper import getDataset
 from dataset.raccomenderDataset import getUtilityMatrix
 
 from scipy.stats import spearmanr
+from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.metrics import mean_squared_error, ndcg_score, mean_absolute_error
 
 
@@ -121,42 +122,44 @@ def main():
     #* ----------------------------------------
 
 
-    # #*-----------------------------------------
-    # if args.user is not None:
-    #     for ((_, rowX), (_, rowY)) in zip(train.iterrows(), test.iterrows()):
-    #         dfTrain = pd.DataFrame({
-    #             "Titolo" : train.columns,
-    #             "allEmbeddings" : [embeddings[embeddings.Titolo == elem].allEmbeddings.values[0] for elem in train.columns],
-    #             "Rating" : rowX.values,
-    #         })
-    #         dfTest = pd.DataFrame({
-    #             "Titolo" : test.columns,
-    #             "allEmbeddings" : [embeddings[embeddings.Titolo == elem].allEmbeddings.values[0] for elem in test.columns],
-    #             "Rating" : rowY.values,
-    #         })
-    #         dfTest = dfTest[dfTest.Rating != 0]
+    #*-----------------------------------------
+    if args.user is not None:
+        for ((_, rowX), (_, rowY)) in zip(train.iterrows(), test.iterrows()):
+            print(f"User: {rowX.name}")
+            print(f"Film visti: {rowX[rowX != 0].index.values}")
+            print(f"Ratings: {rowX[rowX != 0].values}")
 
-    #         meanRating = dfTrain.Rating.mean()
-    #         normalizedRating = dfTrain.Rating.values - meanRating
-    #         userProfile = np.zeros((len(normalizedRating), 1024))
-    #         for i, elem, embedding in zip(range(len(dfTrain.allEmbeddings.values)), normalizedRating, dfTrain.allEmbeddings.values):
-    #             userProfile[i] = np.array([elem]) * embedding
-    #         userProfile = userProfile.sum(axis=0) / len(dfTrain.allEmbeddings.values)
 
-    #         from sklearn.metrics.pairwise import cosine_similarity
-    #         for elem, embedding in zip(dfTest.Titolo.values, dfTest.allEmbeddings.values):
-    #             cossim = cosine_similarity([userProfile], [embedding])[0][0]
-    #             # ((x - oldMin) / (oldMax - oldMin)) * (newMax - newMin) + newMin
-    #             rating = ((cossim - -1) / (1 - -1)) * (5 - 1) + 1
-                
-    #             print(f"Film: {elem}")
-    #             print(f"Rating: {dfTest[dfTest.Titolo == elem].Rating.values[0]}")
-    #             print(f"Similarità: {cossim}")
-    #             print(f"Rating predetto: {round(rating, 0)}")
-    #             print()
+            dfTrain = pd.DataFrame({
+                "Titolo" : train.columns,
+                "allEmbeddings" : [embeddings[embeddings.Titolo == elem].allEmbeddings.values[0] for elem in train.columns],
+                "Rating" : rowX.values,
+            })
+            dfTest = pd.DataFrame({
+                "Titolo" : test.columns,
+                "allEmbeddings" : [embeddings[embeddings.Titolo == elem].allEmbeddings.values[0] for elem in test.columns],
+                "Rating" : rowY.values,
+            })
+            dfTest = dfTest[dfTest.Rating != 0]
 
-    #         exit()
-    # #* ---------------------------------------
+            meanRating = dfTrain.Rating.mean()
+            normalizedRating = dfTrain.Rating.values - meanRating
+
+            userProfile = np.empty((len(normalizedRating), 1024))
+            for i, elem, embedding in zip(range(args.count), normalizedRating, dfTrain.allEmbeddings.values):
+                userProfile[i] = np.array([elem]) * embedding
+            userProfile = userProfile.mean(axis=0)
+
+            for elem, embedding in zip(dfTest.Titolo.values, dfTest.allEmbeddings.values):
+                cossim = cosine_similarity([userProfile], [embedding])[0][0]
+
+                print(f"Film: {elem}")
+                print(f"Rating True: {dfTest[dfTest.Titolo == elem].Rating.values[0]}")
+                print(f"Similarità: {cossim}")
+                print()
+
+            exit()
+    #* ---------------------------------------
 
 
 
