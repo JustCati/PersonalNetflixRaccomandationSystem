@@ -5,8 +5,6 @@ import mord as md
 from sklearn.linear_model import LinearRegression
 from sklearn.neighbors import KNeighborsRegressor as KNNRegressor
 
-import math
-
 
 
 def predict(train, test, embeddings, **kwargs) -> (np.array, np.array):
@@ -41,7 +39,7 @@ def predict(train, test, embeddings, **kwargs) -> (np.array, np.array):
 
         model.fit(dfTrain.allEmbeddings.tolist(), dfTrain.Rating.tolist())
         pred = model.predict(dfTest.allEmbeddings.tolist())
-        pred = np.rint(pred)
+        pred = np.clip(pred, 1, 5)
 
         preds = np.append(preds, pred)
         ratings = np.append(ratings, dfTest.Rating.values)
