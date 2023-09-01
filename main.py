@@ -6,14 +6,15 @@ import pandas as pd
 
 from raccomend.distances import *
 from raccomend.embeddings import *
-from raccomend.predict import predict
+from raccomend.predict import predict, predictWithUser
+
+from sklearn.preprocessing import StandardScaler
 
 from dataset.dataScraper import getDataset
 from dataset.raccomenderDataset import getUtilityMatrix
 
-from scipy.stats import spearmanr
 from sklearn.metrics.pairwise import cosine_similarity
-from sklearn.metrics import mean_squared_error, ndcg_score, mean_absolute_error
+
 
 
 
@@ -62,6 +63,7 @@ def main():
         embeddings.to_parquet("embeddings.parquet")
 
     embeddings["allEmbeddings"] = embeddings.apply(lambda row: np.concatenate((row["Embeddings_Trama"], row["Embeddings_Genere"], row["Embeddings_Regia"], row["Embeddings_Attori"], row["Embeddings_Tipologia"])), axis=1)
+    embeddings["allEmbeddings"] = embeddings["allEmbeddings"].apply(lambda x: StandardScaler().fit_transform(x.reshape(-1, 1)).reshape(-1))
     embeddings["allEmbeddings"] = reducePCA(embeddings, "allEmbeddings", 1024)
     #* --------------------------------------------
 
@@ -106,60 +108,31 @@ def main():
 
     #* ---------- Prediction -------------
     if args.algorithm in ["linear", "knn", "ordinal"]:
-        preds, ratings = predict(train, test, embeddings, model=args.algorithm, kneighbors=args.count)
+        rmse, mae, ndcg, spear = predict(train, test, embeddings, model=args.algorithm, kneighbors=args.count)
 
-        if preds.shape[0] == 0:
+        if 0 in [rmse.size, mae.size, ndcg.size, spear.size]:
             print("No ratings found")
             return
 
         print()
         print(f"{args.algorithm.capitalize()} Regression: ")
-        print(f"MAE: {mean_absolute_error(ratings, preds)}")
-        print(f"RMSE: {mean_squared_error(ratings, preds, squared=False)}")
-        print(f"NDCG: {ndcg_score([ratings], [preds])}")
-        print(f"Spearman Correlation: {spearmanr(preds, ratings).statistic}")
-        print(f"Ratings predicted: {set(np.rint(preds))}")
+        print(f"MAE: {mae.mean()}")
+        print(f"RMSE: {rmse.mean()}")
+        print(f"NDCG: {ndcg.mean()}")
+        print(f"Spearman Correlation: {spear.mean()}")
     #* ----------------------------------------
 
 
-    #*-----------------------------------------
+    #*----------- Pure Theoric Approach -------------
     if args.user is not None:
-        for ((_, rowX), (_, rowY)) in zip(train.iterrows(), test.iterrows()):
-            print(f"User: {rowX.name}")
-            print(f"Film visti: {rowX[rowX != 0].index.values}")
-            print(f"Ratings: {rowX[rowX != 0].values}")
-
-
-            dfTrain = pd.DataFrame({
-                "Titolo" : train.columns,
-                "allEmbeddings" : [embeddings[embeddings.Titolo == elem].allEmbeddings.values[0] for elem in train.columns],
-                "Rating" : rowX.values,
-            })
-            dfTest = pd.DataFrame({
-                "Titolo" : test.columns,
-                "allEmbeddings" : [embeddings[embeddings.Titolo == elem].allEmbeddings.values[0] for elem in test.columns],
-                "Rating" : rowY.values,
-            })
-            dfTest = dfTest[dfTest.Rating != 0]
-
-            meanRating = dfTrain.Rating.mean()
-            normalizedRating = dfTrain.Rating.values - meanRating
-
-            userProfile = np.empty((len(normalizedRating), 1024))
-            for i, elem, embedding in zip(range(args.count), normalizedRating, dfTrain.allEmbeddings.values):
-                userProfile[i] = np.array([elem]) * embedding
-            userProfile = userProfile.mean(axis=0)
-
-            for elem, embedding in zip(dfTest.Titolo.values, dfTest.allEmbeddings.values):
-                cossim = cosine_similarity([userProfile], [embedding])[0][0]
-
-                print(f"Film: {elem}")
-                print(f"Rating True: {dfTest[dfTest.Titolo == elem].Rating.values[0]}")
-                print(f"Similarità: {cossim}")
-                print()
-
-            exit()
-    #* ---------------------------------------
+        userProfile, res = predictWithUser(train, embeddings)
+        matrix = cosine_similarity(userProfile.reshape(1, -1), embeddings.allEmbeddings.tolist())
+        
+        print("L'utente ha visto questi film:")
+        print(res)
+        print()
+        print(movies.iloc[np.argsort(matrix[0])[-11::]]["Titolo"][-2::-1])
+    #* ----------------------------------------------
 
 
 
