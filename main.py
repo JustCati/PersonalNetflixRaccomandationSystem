@@ -58,13 +58,12 @@ def main():
         embeddings = getFeatureAttori(embeddings, movies, colName="Attori")
         embeddings = getFeatureTipologia(embeddings, movies)
 
-        for col in ["Embeddings_Genere", "Embeddings_Regia", "Embeddings_Attori", "Embeddings_Tipologia"]:
-            embeddings[col] = reduceCategorial(embeddings, col, 1024)
+        embeddings["allEmbeddings"] = embeddings.apply(lambda row: np.concatenate((row["Embeddings_Trama"], row["Embeddings_Genere"], row["Embeddings_Regia"], row["Embeddings_Attori"], row["Embeddings_Tipologia"])), axis=1)
+        embeddings["allEmbeddings"] = embeddings["allEmbeddings"].apply(lambda x: StandardScaler().fit_transform(x.reshape(-1, 1)).reshape(-1))
+        embeddings["allEmbeddings"] = reducePCA(embeddings, "allEmbeddings", 1024)
+        
+        embeddings = embeddings.drop(columns=["Embeddings_Genere", "Embeddings_Regia", "Embeddings_Attori", "Embeddings_Tipologia"])
         embeddings.to_parquet("embeddings.parquet")
-
-    embeddings["allEmbeddings"] = embeddings.apply(lambda row: np.concatenate((row["Embeddings_Trama"], row["Embeddings_Genere"], row["Embeddings_Regia"], row["Embeddings_Attori"], row["Embeddings_Tipologia"])), axis=1)
-    embeddings["allEmbeddings"] = embeddings["allEmbeddings"].apply(lambda x: StandardScaler().fit_transform(x.reshape(-1, 1)).reshape(-1))
-    embeddings["allEmbeddings"] = reducePCA(embeddings, "allEmbeddings", 1024)
     #* --------------------------------------------
 
 
@@ -108,9 +107,9 @@ def main():
 
     #* ---------- Prediction -------------
     if args.algorithm in ["linear", "knn", "ordinal"]:
-        rmse, mae, ndcg, spear = predict(train, test, embeddings, model=args.algorithm, kneighbors=args.count)
+        rmse, mae = predict(train, test, embeddings, model=args.algorithm, kneighbors=args.count)
 
-        if 0 in [rmse.size, mae.size, ndcg.size, spear.size]:
+        if 0 in [rmse.size, mae.size]:
             print("No ratings found")
             return
 
@@ -118,8 +117,6 @@ def main():
         print(f"{args.algorithm.capitalize()} Regression: ")
         print(f"MAE: {mae.mean()}")
         print(f"RMSE: {rmse.mean()}")
-        print(f"NDCG: {ndcg.mean()}")
-        print(f"Spearman Correlation: {spear.mean()}")
     #* ----------------------------------------
 
 

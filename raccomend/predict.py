@@ -1,8 +1,6 @@
 import numpy as np
 import pandas as pd
 
-from scipy.stats import spearmanr, pearsonr
-
 import mord as md
 from sklearn.linear_model import LinearRegression
 from sklearn.neighbors import KNeighborsRegressor as KNNRegressor
@@ -22,8 +20,6 @@ def predict(train, test, embeddings, **kwargs):
 
     rmses = np.empty(0)
     maes = np.empty(0)
-    ndcgs = np.empty(0)
-    spear = np.empty(0)
     for ((_, rowX), (_, rowY)) in zip(train.iterrows(), test.iterrows()):
         dfTrain = pd.DataFrame({
             "Titolo" : train.columns,
@@ -48,15 +44,11 @@ def predict(train, test, embeddings, **kwargs):
 
         rmse = mean_squared_error(dfTest.Rating.tolist(), pred, squared=False)
         mae = mean_absolute_error(dfTest.Rating.tolist(), pred)
-        ndcg = ndcg_score([dfTest.Rating.tolist()], [pred])
-        spearman = spearmanr(dfTest.Rating.tolist(), pred).statistic
         
         rmses = np.append(rmses, rmse)
         maes = np.append(maes, mae)
-        ndcgs = np.append(ndcgs, ndcg)
-        spear = np.append(spear, spearman)
 
-    return rmses, maes, ndcgs, spear
+    return rmses, maes
 
 
 def predictWithUser(train, embeddings):
