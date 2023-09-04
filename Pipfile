@@ -17,7 +17,7 @@ sentence-transformers = "*"
 parallel-pandas = "*"
 argparse = "*"
 statsmodels = "*"
-prince = "*"
+mord = "*"
 
 [dev-packages]
 
