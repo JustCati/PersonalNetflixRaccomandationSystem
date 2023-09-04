@@ -92,9 +92,9 @@ def main():
 
     #* ---------- Dataset Creation ------------
     columns = utilityMatrix.columns.tolist()
-    random.Random(42).shuffle(columns)          #! DEBUG, change with random.Random().shuffle(columns) for random order
+    random.Random().shuffle(columns)          #! DEBUG, change with random.Random().shuffle(columns) for random order
     columns = columns[:args.count]
-    remaining = [elem for elem in utilityMatrix.columns.tolist() if elem not in columns]
+    remaining = [elem for elem in utilityMatrix.columns if elem not in columns]
 
     validUsers = None
     for col in columns:
@@ -107,16 +107,17 @@ def main():
 
     #* ---------- Prediction -------------
     if args.algorithm in ["linear", "knn", "ordinal"]:
-        rmse, mae = predict(train, test, embeddings, model=args.algorithm, kneighbors=args.count)
+        for bias in [False, True]:
+            rmse, mae = predict(train, test, embeddings, model=args.algorithm, kneighbors=args.count, bias=bias)
 
-        if 0 in [rmse.size, mae.size]:
-            print("No ratings found")
-            return
+            if 0 in [rmse.size, mae.size]:
+                print("No ratings found")
+                return
 
-        print()
-        print(f"{args.algorithm.capitalize()} Regression: ")
-        print(f"MAE: {mae.mean()}")
-        print(f"RMSE: {rmse.mean()}")
+            print()
+            print(f"{args.algorithm.capitalize()} Regression {'with' if bias else 'without'} bias: ")
+            print(f"MAE: {mae.mean()}")
+            print(f"RMSE: {rmse.mean()}")
     #* ----------------------------------------
 
 

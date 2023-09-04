@@ -4,19 +4,22 @@ import pandas as pd
 import mord as md
 from sklearn.linear_model import LinearRegression
 from sklearn.neighbors import KNeighborsRegressor as KNNRegressor
-from sklearn.metrics import mean_squared_error, ndcg_score, mean_absolute_error
+from sklearn.metrics import mean_squared_error, mean_absolute_error
 
 
 
 def predict(train, test, embeddings, **kwargs):
-    if kwargs["model"] == "linear":
-        model = LinearRegression(n_jobs=-1)
-    elif kwargs["model"] == "knn": 
-        model = KNNRegressor(n_jobs=-1, n_neighbors=kwargs["kneighbors"], metric="cosine", weights="distance")
-    elif kwargs["model"] == "ordinal":
-        model = md.OrdinalRidge()
+    if "model" in kwargs:
+        if kwargs["model"] == "linear":
+            model = LinearRegression(n_jobs=-1)
+        elif kwargs["model"] == "knn": 
+            model = KNNRegressor(n_jobs=-1, n_neighbors=kwargs["kneighbors"], metric="cosine", weights="distance")
+        elif kwargs["model"] == "ordinal":
+            model = md.OrdinalRidge()
+        else:
+            raise Exception("Model not supported")
     else:
-        raise Exception("Model not supported")
+        raise Exception("Model not specified")
 
     rmses = np.empty(0)
     maes = np.empty(0)
@@ -38,13 +41,31 @@ def predict(train, test, embeddings, **kwargs):
             dfTrain.Rating = dfTrain.Rating.astype(catType)
             dfTest.Rating = dfTest.Rating.astype(catType)
 
-        model.fit(dfTrain.allEmbeddings.tolist(), dfTrain.Rating.tolist())
-        pred = model.predict(dfTest.allEmbeddings.tolist())
+        model.fit(dfTrain.allEmbeddings.to_list(), dfTrain.Rating.to_list())
+        pred = model.predict(dfTest.allEmbeddings.to_list())
         pred = np.clip(pred, 1, 5)
 
-        rmse = mean_squared_error(dfTest.Rating.tolist(), pred, squared=False)
-        mae = mean_absolute_error(dfTest.Rating.tolist(), pred)
-        
+        if "bias" in kwargs and kwargs["bias"] == True:
+            dfTest = dfTest.reset_index(drop=True)
+
+            if kwargs["model"] == "ordinal":
+                dfTest.Rating = dfTest.Rating.astype(int)
+
+            exceeded = dfTest.Rating < pred
+            defect = dfTest.Rating > pred
+
+            exceeded = exceeded[exceeded == True]
+            defect = defect[defect == True]
+            
+            exceeded = dfTest.iloc[exceeded.index].Rating - pred[exceeded.index]
+            defect = dfTest.iloc[defect.index].Rating - pred[defect.index]
+                
+            bias = np.nanmean(np.concatenate((exceeded, defect)))
+            pred = pred + bias
+
+        rmse = mean_squared_error(dfTest.Rating, pred, squared=False)
+        mae = mean_absolute_error(dfTest.Rating, pred)
+
         rmses = np.append(rmses, rmse)
         maes = np.append(maes, mae)
 
@@ -69,4 +90,4 @@ def predictWithUser(train, embeddings):
         userProfile[i] = np.array([elem]) * embedding
     userProfile = userProfile.mean(axis=0)
 
-    return userProfile, {dfTrain.Titolo[i] : dfTrain.Rating[i] for i in range(len(dfTrain.Titolo))}
+    return userProfile, {dfTrain.Titolo[i] : dfTrain.Rating[i] for i in range(dfTrain.shape[0])}
