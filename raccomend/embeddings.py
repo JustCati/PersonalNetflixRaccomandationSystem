@@ -1,24 +1,11 @@
 import torch
 import numpy as np
-import pandas as pd
-
-from prince import MCA
-from sklearn.decomposition import PCA
 
 from sentence_transformers import SentenceTransformer
+
+from sklearn.decomposition import PCA
 from sklearn.preprocessing import MultiLabelBinarizer, OneHotEncoder
 
-
-def reduceCategorial(df, colName, n_components=1024):
-    if len(df[colName].values[0]) > n_components:
-        mca = MCA(n_components=n_components, engine="sklearn")
-    else:
-        mca = MCA(n_components=len(df[colName].values[0]), engine="sklearn")
-    data = df[colName].values
-    data = pd.DataFrame(data.tolist())
-    mca.fit(data)
-    data = mca.transform(data)
-    return data.values.tolist()
 
 
 def reducePCA(df, colName, n_components=1024):
