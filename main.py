@@ -22,10 +22,11 @@ from sklearn.metrics.pairwise import cosine_similarity
 
 def main():
     parser = argparse.ArgumentParser(description="Raccomender")
-    parser.add_argument("-q", "--qualitative", action="store_true", default=None, help="Show naive qualitative raccomendation")
-    parser.add_argument("-u", "--user", action="store_true", default=None, help="Show results with user profile similarity")
-    parser.add_argument("-c", "--count", type=int, default=1, help="Set the number of ratings to use for training for each user")
+    parser.add_argument("-q", "--qualitative", action="store_true", default=False, help="Show naive qualitative raccomendation")
+    parser.add_argument("-u", "--user", action="store_true", default=False, help="Show results with user profile similarity")
+    parser.add_argument("-c", "--count", type=int, default=5, help="Set the number of ratings to use for training for each user")
     parser.add_argument("-a", "--algorithm", type=str, default="", help="Set the algorithm to use for raccomendation")
+    parser.add_argument("-r", "--round", action="store_true", default=False, help="Round the predicted ratings")
     args = parser.parse_args()
 
 
@@ -61,17 +62,17 @@ def main():
         embeddings["allEmbeddings"] = embeddings.apply(lambda row: np.concatenate((row["Embeddings_Trama"], row["Embeddings_Genere"], row["Embeddings_Regia"], row["Embeddings_Attori"], row["Embeddings_Tipologia"])), axis=1)
         embeddings["allEmbeddings"] = embeddings["allEmbeddings"].apply(lambda x: StandardScaler().fit_transform(x.reshape(-1, 1)).reshape(-1))
         embeddings["allEmbeddings"] = reducePCA(embeddings, "allEmbeddings", 1024)
-        
+
         embeddings = embeddings.drop(columns=["Embeddings_Genere", "Embeddings_Regia", "Embeddings_Attori", "Embeddings_Tipologia"])
         embeddings.to_parquet("embeddings.parquet")
     #* --------------------------------------------
 
 
     #* ---------- Naive Raccomender based on similarity --------
-    if args.qualitative is not None:
+    if args.qualitative:
         while((title := input("Inserisci il titolo del film: ").strip()) not in movies.Titolo.values):
             print("Film non trovato")
-        
+
         # title = "The Conjuring - Il caso Enfield"
 
         print("Film simili con cosine come distanza:")
@@ -92,7 +93,7 @@ def main():
 
     #* ---------- Dataset Creation ------------
     columns = utilityMatrix.columns.tolist()
-    random.Random().shuffle(columns)          #! DEBUG, change with random.Random().shuffle(columns) for random order
+    random.Random(42).shuffle(columns)          #! DEBUG, change with random.Random().shuffle(columns) for random order
     columns = columns[:args.count]
     remaining = [elem for elem in utilityMatrix.columns if elem not in columns]
 
@@ -105,10 +106,10 @@ def main():
     #* ---------------------------------------
 
 
-    #* ---------- Prediction -------------
+    #* ---------- Prediction -----------------
     if args.algorithm in ["linear", "knn", "ordinal"]:
         for bias in [False, True]:
-            rmse, mae = predict(train, test, embeddings, model=args.algorithm, kneighbors=args.count, bias=bias)
+            rmse, mae = predict(train, test, embeddings, model=args.algorithm, kneighbors=args.count, bias=bias, round=args.round)
 
             if 0 in [rmse.size, mae.size]:
                 print("No ratings found")
@@ -118,14 +119,16 @@ def main():
             print(f"{args.algorithm.capitalize()} Regression {'with' if bias else 'without'} bias: ")
             print(f"MAE: {mae.mean()}")
             print(f"RMSE: {rmse.mean()}")
+    elif args.algorithm != "":
+        raise Exception("Model not supported")
     #* ----------------------------------------
 
 
     #*----------- Pure Theoric Approach -------------
-    if args.user is not None:
+    if args.user:
         userProfile, res = predictWithUser(train, embeddings)
         matrix = cosine_similarity(userProfile.reshape(1, -1), embeddings.allEmbeddings.tolist())
-        
+
         print("L'utente ha visto questi film:")
         print(res)
         print()
