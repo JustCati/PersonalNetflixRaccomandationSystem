@@ -45,6 +45,9 @@ def predict(train, test, embeddings, **kwargs):
         pred = model.predict(dfTest.allEmbeddings.to_list())
         pred = np.clip(pred, 1, 5)
 
+        if "round" in kwargs and kwargs["round"] == True:
+            pred = np.round(pred)
+
         if "bias" in kwargs and kwargs["bias"] == True:
             dfTest = dfTest.reset_index(drop=True)
 
