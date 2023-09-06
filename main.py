@@ -107,7 +107,13 @@ def main():
     #* ---------- Prediction -----------------
     if args.algorithm in ["linear", "knn", "ordinal"]:
         for bias in [False, True]:
-            rmse, mae = predict(train, test, embeddings, model=args.algorithm, kneighbors=args.count, bias=bias, round=args.round)
+            rmse, mae = predict(train, test, embeddings, 
+                                model=args.algorithm, 
+                                kneighbors=args.count, 
+                                bias=bias, 
+                                round=args.round, 
+                                metric="cosine", 
+                                distance="distance")
 
             if 0 in [rmse.size, mae.size]:
                 print("No ratings found")
