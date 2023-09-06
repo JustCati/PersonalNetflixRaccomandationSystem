@@ -13,8 +13,6 @@ from sklearn.preprocessing import StandardScaler
 from dataset.dataScraper import getDataset
 from dataset.raccomenderDataset import getUtilityMatrix
 
-from sklearn.metrics.pairwise import cosine_similarity
-
 
 
 
@@ -126,13 +124,28 @@ def main():
 
     #*----------- Pure Theoric Approach -------------
     if args.user:
+        def cossim(X, Y):
+            return np.dot(X, Y) / (np.linalg.norm(X) * np.linalg.norm(Y))
+
         userProfile, res = predictWithUser(train, embeddings)
-        matrix = cosine_similarity(userProfile.reshape(1, -1), embeddings.allEmbeddings.tolist())
+
+        test = test.sample(frac=1, random_state=42)
+        test = test.iloc[0].T
+        dfTest = pd.DataFrame({
+            "Titolo" : test.index,
+            "allEmbeddings" : [embeddings[embeddings.Titolo == elem].allEmbeddings.values[0] for elem in test.index],
+            "Rating" : test.values,
+        })
+        films = dfTest[dfTest.Rating != 0].allEmbeddings.values
+
+        totSim = np.empty(0)
+        for film in films:
+            totSim = np.append(totSim, cossim(userProfile, film))
 
         print("L'utente ha visto questi film:")
         print(res)
         print()
-        print(movies.iloc[np.argsort(matrix[0])[-11::]]["Titolo"][-2::-1])
+        print(movies.iloc[np.argsort(totSim)[-11::]]["Titolo"][-2::-1])
     #* ----------------------------------------------
 
 
