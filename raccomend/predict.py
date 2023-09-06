@@ -13,7 +13,7 @@ def predict(train, test, embeddings, **kwargs):
         if kwargs["model"] == "linear":
             model = LinearRegression(n_jobs=-1)
         elif kwargs["model"] == "knn": 
-            model = KNNRegressor(n_jobs=-1, n_neighbors=kwargs["kneighbors"], metric="cosine", weights="distance")
+            model = KNNRegressor(n_jobs=-1, n_neighbors=kwargs["kneighbors"], metric=kwargs["metric"], weights=kwargs["distance"])
         elif kwargs["model"] == "ordinal":
             model = md.OrdinalRidge()
         else:
