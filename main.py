@@ -4,14 +4,16 @@ import argparse
 import numpy as np
 import pandas as pd
 
+from sklearn.preprocessing import StandardScaler
+
 from raccomend.distances import *
 from raccomend.embeddings import *
 from raccomend.predict import predict, predictWithUser
 
-from sklearn.preprocessing import StandardScaler
-
 from dataset.dataScraper import getDataset
 from dataset.raccomenderDataset import getUtilityMatrix
+
+from graphs.graph import printTable
 
 
 
@@ -152,10 +154,10 @@ def main():
             "Titolo" : res.keys(),
             "Rating" : res.values(),
         })        
-        toRaccomend = movies.iloc[np.argsort(totSim)[::-1]]["Titolo"][1::]
+        toRaccomend = movies.iloc[np.argsort(totSim)[-11::]]["Titolo"][-2::-1]
         dfReccomend = pd.DataFrame({
             "Titolo" : toRaccomend,
-            "Similarity" : totSim[np.argsort(totSim)[::-1]][1::],
+            "Similarity" : totSim[np.argsort(totSim)[-11::]][-2::-1],
         })
 
         print(dfLiked)
