@@ -91,7 +91,7 @@ def main():
 
     #* ---------- Dataset Creation ------------
     columns = utilityMatrix.columns.tolist()
-    random.Random(42).shuffle(columns)          #! DEBUG, change with random.Random().shuffle(columns) for random order
+    random.Random().shuffle(columns)
     columns = columns[:args.count]
     remaining = [elem for elem in utilityMatrix.columns if elem not in columns]
 
