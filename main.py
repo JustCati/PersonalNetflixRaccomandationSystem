@@ -73,8 +73,6 @@ def main():
         while((title := input("Inserisci il titolo del film: ").strip()) not in movies.Titolo.values):
             print("Film non trovato")
 
-        # title = "The Conjuring - Il caso Enfield"
-
         print("Film simili con cosine come distanza:")
         print(getMostSimilarCosine(movies, embeddings, title))
 
@@ -153,7 +151,7 @@ def main():
         dfLiked = pd.DataFrame({
             "Titolo" : res.keys(),
             "Rating" : res.values(),
-        })        
+        })
         toRaccomend = movies.iloc[np.argsort(totSim)[-11::]]["Titolo"][-2::-1]
         dfReccomend = pd.DataFrame({
             "Titolo" : toRaccomend,
