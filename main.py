@@ -148,10 +148,18 @@ def main():
         for film in films:
             totSim = np.append(totSim, cossim(userProfile, film))
 
-        print("L'utente ha visto questi film:")
-        print(res)
-        print()
-        print(movies.iloc[np.argsort(totSim)[-11::]]["Titolo"][-2::-1])
+        dfLiked = pd.DataFrame({
+            "Titolo" : res.keys(),
+            "Rating" : res.values(),
+        })        
+        toRaccomend = movies.iloc[np.argsort(totSim)[::-1]]["Titolo"][1::]
+        dfReccomend = pd.DataFrame({
+            "Titolo" : toRaccomend,
+            "Similarity" : totSim[np.argsort(totSim)[::-1]][1::],
+        })
+
+        print(dfLiked)
+        print(dfReccomend)
     #* ----------------------------------------------
 
 
