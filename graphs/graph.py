@@ -4,12 +4,13 @@ import matplotlib.pyplot as plt
 
 
 
-def printTable(df, title):
+def printTable(df, title=""):
     fig, ax = plt.subplots()
     fig.patch.set_visible(False)
     ax.axis('off')
     ax.axis('tight')
-    ax.set_title(title, fontdict={"fontsize" : 20}, pad=20, loc="center", color="red", y=1.1)
+    if title != "":
+        ax.set_title(title, fontdict={"fontsize" : 20}, pad=20, loc="center", color="red", y=1.1)
     ax.table(cellText=df.values, colLabels=df.columns, loc='center', cellLoc='center', rowLoc='center', colLoc='center')
     fig.tight_layout()
     plt.show()

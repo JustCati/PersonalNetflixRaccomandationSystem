@@ -73,11 +73,21 @@ def main():
         while((title := input("Inserisci il titolo del film: ").strip()) not in movies.Titolo.values):
             print("Film non trovato")
 
-        print("Film simili con cosine come distanza:")
-        print(getMostSimilarCosine(movies, embeddings, title))
+        res = getMostSimilarCosine(movies, embeddings, title)
+        df = pd.DataFrame({
+            f"Film più simili a '{title}' con similarità del coseno" : res
+        })
+        print("\nDistanza del Coseno:")
+        print(df)
+        printTable(df)
 
-        print("\nFilm simili con euclidean come distanza:")
-        print(getMostSimilarEuclidean(movies, embeddings, title))
+        res = getMostSimilarEuclidean(movies, embeddings, title)
+        df = pd.DataFrame({
+            f"Film più simili a '{title}' con distanza euclidea" : res
+        })
+        print("\nDistanza Euclidea:")
+        print(df)
+        printTable(df)
     #* ---------------------------------------------------------
 
 
