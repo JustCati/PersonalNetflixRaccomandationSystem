@@ -89,7 +89,7 @@ def predictWithUser(train, embeddings):
     normalizedRating = dfTrain.Rating.values - meanRating
 
     userProfile = np.empty((len(normalizedRating), 1024))
-    for i, elem, embedding in zip(range(len(dfTrain.allEmbeddings.values)), normalizedRating, dfTrain.allEmbeddings.values):
+    for i, (elem, embedding) in enumerate(zip(normalizedRating, dfTrain.allEmbeddings.values)):
         userProfile[i] = np.array([elem]) * embedding
     userProfile = userProfile.mean(axis=0)
 
