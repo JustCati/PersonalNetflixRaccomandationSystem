@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
 
 
@@ -47,6 +48,28 @@ def plotBestK():
         plt.show()
 
 
+def plotPerf():
+    df = pd.read_csv("perf.csv")
+
+    x = df["model"].to_list()
+    y = df["rmse"].to_list()
+    
+    plt.bar(x[::2], y[::2], color="red")
+    plt.bar(x[1::2], y[1::2], color="cyan")
+    plt.xticks(rotation=45)
+    plt.ylabel("RMSE")
+    plt.legend(["Senza Bias", "Con Bias"], loc="lower right")
+    plt.title("RMSE per ogni modello")
+
+    for i, v in enumerate(y[::2]):
+        plt.text(i - 0.2, v + 0.01, f"{v:.2f}", fontsize=8)
+    for i, v in enumerate(y[1::2]):
+        plt.text(i + 0.1, v + 0.01, f"{v:.2f}", fontsize=8)
+    plt.show()
+
+
+
 if __name__ == "__main__":
     # plotBestK()
+    plotPerf()
     exit()
