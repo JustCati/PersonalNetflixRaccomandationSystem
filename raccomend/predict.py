@@ -42,15 +42,18 @@ def predict(train, test, embeddings, **kwargs):
             dfTest.Rating = dfTest.Rating.astype(catType)
 
         model.fit(dfTrain.allEmbeddings.to_list(), dfTrain.Rating.to_list())
-        pred = model.predict(dfTest.allEmbeddings.to_list())
-        pred = np.clip(pred, 1, 5)
-
-        if "round" in kwargs and kwargs["round"] == True:
-            pred = np.round(pred)
 
         if "bias" in kwargs and kwargs["bias"] == True:
-            dfTest = dfTest.reset_index(drop=True)
+            dfValid = dfTest.sample(frac=.25, random_state=42)
+            dfTest = dfTest.drop(dfValid.index)
+            
+            pred = model.predict(dfTest.allEmbeddings.to_list())
+            pred = np.clip(pred, 1, 5)
 
+            if "round" in kwargs and kwargs["round"] == True:
+                pred = np.round(pred)
+
+            dfTest = dfTest.reset_index(drop=True)
             if kwargs["model"] == "ordinal":
                 dfTest.Rating = dfTest.Rating.astype(int)
 
@@ -59,15 +62,24 @@ def predict(train, test, embeddings, **kwargs):
 
             exceeded = exceeded[exceeded == True]
             defect = defect[defect == True]
-            
             exceeded = dfTest.iloc[exceeded.index].Rating - pred[exceeded.index]
             defect = dfTest.iloc[defect.index].Rating - pred[defect.index]
-                
             bias = np.nanmean(np.concatenate((exceeded, defect)))
-            pred = pred + bias
 
-        rmse = mean_squared_error(dfTest.Rating, pred, squared=False)
-        mae = mean_absolute_error(dfTest.Rating, pred)
+            finalPred = model.predict(dfValid.allEmbeddings.to_list())
+            finalPred = np.clip(finalPred, 1, 5)
+            if kwargs["round"] == True:
+                finalPred = np.round(finalPred)
+
+            finalPred = finalPred + bias
+            rmse = mean_squared_error(dfValid.Rating, finalPred, squared=False)
+            mae = mean_absolute_error(dfValid.Rating, finalPred)
+        else:
+            pred = model.predict(dfTest.allEmbeddings.to_list())
+            pred = np.clip(pred, 1, 5)
+
+            rmse = mean_squared_error(dfTest.Rating, pred, squared=False)
+            mae = mean_absolute_error(dfTest.Rating, pred)
 
         rmses = np.append(rmses, rmse)
         maes = np.append(maes, mae)
