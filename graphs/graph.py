@@ -10,7 +10,7 @@ def printTable(df, title=""):
     ax.axis('off')
     ax.axis('tight')
     if title != "":
-        ax.set_title(title, fontdict={"fontsize" : 20}, pad=20, loc="center", color="red", y=1.1)
+        ax.set_title(title, fontdict={"fontsize" : 20}, pad=20, loc="center", color="black", y=1.1)
     ax.table(cellText=df.values, colLabels=df.columns, loc='center', cellLoc='center', rowLoc='center', colLoc='center')
     fig.tight_layout()
     plt.show()
@@ -53,19 +53,19 @@ def plotPerf():
     df = pd.read_csv("perf.csv")
 
     x = df["model"].to_list()
-    y = df["rmse"].to_list()
+    y = df["mae"].to_list()
     
     plt.bar(x[::2], y[::2], color="red")
     plt.bar(x[1::2], y[1::2], color="cyan")
     plt.xticks(rotation=45)
-    plt.ylabel("RMSE")
+    plt.ylabel("MAE")
     plt.legend(["Senza Bias", "Con Bias"], loc="lower right")
-    plt.title("RMSE per ogni modello")
+    plt.title("MAE per ogni modello")
 
     for i, v in enumerate(y[::2]):
-        plt.text(i - 0.2, v + 0.01, f"{v:.2f}", fontsize=8)
+        plt.text(i - 0.2, v + 0.01, f"{v:.2f}", fontsize=10)
     for i, v in enumerate(y[1::2]):
-        plt.text(i + 0.1, v + 0.01, f"{v:.2f}", fontsize=8)
+        plt.text(i + 0.1, v + 0.01, f"{v:.2f}", fontsize=10)
     plt.show()
 
 
