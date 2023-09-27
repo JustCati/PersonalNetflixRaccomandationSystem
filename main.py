@@ -79,7 +79,6 @@ def main():
         })
         print("\nDistanza del Coseno:")
         print(df)
-        printTable(df)
 
         res = getMostSimilarEuclidean(movies, embeddings, title)
         df = pd.DataFrame({
@@ -87,7 +86,6 @@ def main():
         })
         print("\nDistanza Euclidea:")
         print(df)
-        printTable(df)
     #* ---------------------------------------------------------
 
 
