@@ -2,8 +2,6 @@
 
 
 
-## Abstract
-
 
 The aim of this project is to develop a recommendation system for products available on the Netflix streaming platform based on user content and preferences. The system has been created to provide a personalized recommendation alternative to Netflix's proprietary system. The goal is to achieve a recommendation system independent of advertising biases.
 
