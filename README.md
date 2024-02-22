@@ -11,3 +11,7 @@ Additionally, the recommendation problem has been approached as a regression pro
 The main focus of the project lies on the K-NN Regressor model, which predicts user ratings for unseen movies based on where the movies are mapped in the space. The results obtained are not optimal but still acceptable, considering the model was trained on a dataset with limited data.
 
 It is also noted that the representation of movies used is not optimal; with a more suitable representation, better results could certainly be achieved.
+
+
+## License
+The content of this repository is distributed under the [GNU GPL-3.0 License](LICENSE).
